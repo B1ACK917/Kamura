@@ -1,10 +1,14 @@
-use axum::http::StatusCode;
-use axum::Json;
-use serde::{Deserialize, Serialize};
-use sayaka::debug_fn;
-use colored::*;
+use axum::Router;
+use axum::routing::{get, MethodRouter};
 
-pub async fn root() -> &'static str {
-    debug_fn!();
-    "Kamura Engine Ready"
+fn route(path: &str, method_router: MethodRouter<()>) -> Router {
+    Router::new().route(path, method_router)
+}
+
+pub fn root() -> Router {
+    async fn handler() -> &'static str {
+        "Greetings From Kamura!"
+    }
+
+    route("/", get(handler))
 }

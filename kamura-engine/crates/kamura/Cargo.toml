@@ -8,6 +8,7 @@ authors.workspace = true
 
 [dependencies]
 axum = "0.7.5"
+clap = { version = "4.5.16", features = ["derive"] }
 colored = "2.1.0"
 sayaka = { path = "../sayaka" }
 serde = { version = "1.0.209", features = ["derive"] }
