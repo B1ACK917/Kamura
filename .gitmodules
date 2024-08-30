@@ -1,0 +1,3 @@
+[submodule "kamura-engine/crates/sayaka"]
+	path = kamura-engine/crates/sayaka
+	url = https://github.com/B1ACK917/Sayaka.git
