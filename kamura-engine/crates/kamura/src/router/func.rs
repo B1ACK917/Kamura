@@ -17,10 +17,16 @@ pub struct Tasks {
     message: String,
 }
 
-#[derive(Deserialize,Debug)]
+#[derive(Deserialize, Debug)]
 pub struct AddTaskPayload {
     arch: String,
-    trace: String,
+    workload: String,
+    workload_type: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct GetTaskPayload {
+    uuid: String,
 }
 
 pub async fn root() -> &'static str {
@@ -30,9 +36,33 @@ pub async fn root() -> &'static str {
 
 pub async fn add_task(mut state: State<Runner>, Json(payload): Json<AddTaskPayload>) -> Json<CommonResponse> {
     debug_fn!(payload);
-    match state.add_task(&payload.arch, &payload.trace) {
+    match state.add_task(&payload.arch, &payload.workload, &payload.workload_type).await {
         Ok(uuid) => {
             Json(CommonResponse { success: true, message: uuid.to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_task_log(state: State<Runner>, Json(payload): Json<GetTaskPayload>) -> Json<CommonResponse> {
+    debug_fn!(payload);
+    match state.get_task_log(&payload.uuid) {
+        Ok(content) => {
+            Json(CommonResponse { success: true, message: content })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_task_status(state: State<Runner>, Json(payload): Json<GetTaskPayload>) -> Json<CommonResponse> {
+    debug_fn!(payload);
+    match state.get_task_status(&payload.uuid) {
+        Ok(content) => {
+            Json(CommonResponse { success: true, message: content })
         }
         Err(err) => {
             Json(CommonResponse { success: false, message: err.to_string() })

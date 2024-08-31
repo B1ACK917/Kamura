@@ -1,7 +1,7 @@
 mod router;
 mod utils;
 
-use crate::router::{add_task, flush_all, get_all_tasks, root};
+use crate::router::{add_task, flush_all, get_all_tasks, get_task_log, get_task_status, root};
 use crate::utils::cli;
 use axum::routing::{get, post};
 use axum::Router;
@@ -10,6 +10,8 @@ use kamura_runner::Runner;
 use sayaka::debug_fn;
 use std::error::Error;
 use std::path::PathBuf;
+use tower_http::cors::{Any, CorsLayer};
+
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -22,11 +24,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     let kamura_runner = Runner::new(perseus_path, redis)?;
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods(Any)
+        .allow_headers(Any);
+
     let app = Router::new()
         .route("/", get(root))
         .route("/addTask", post(add_task))
+        .route("/getTaskStatus", post(get_task_status))
+        .route("/getTaskLog", post(get_task_log))
         .route("/getAllTasks", get(get_all_tasks))
         .route("/flushAll", get(flush_all))
+        .layer(cors)
         .with_state(kamura_runner);
     let listener = tokio::net::TcpListener::bind(bind_address).await?;
     println!("Kamura running on {}", listener.local_addr()?);
