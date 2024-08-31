@@ -1,15 +1,14 @@
 <template>
-  <img alt="Vue logo" src="./assets/logo.png">
-  <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <KamuraMain/>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import KamuraMain from './components/KamuraMain.vue'
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
+    KamuraMain
   }
 }
 </script>
