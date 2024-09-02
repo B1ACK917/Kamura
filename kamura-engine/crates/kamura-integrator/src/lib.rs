@@ -68,11 +68,18 @@ impl Integrator {
         }
     }
 
-    pub fn get_build_date(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get_build_date(&self, module: String) -> Result<String, Box<dyn std::error::Error>> {
         debug_fn!();
-        let build_model_path = self.perseus.join("build/model");
+        let target_path;
+        if module == "Perseus" {
+            target_path = self.perseus.join("build/model");
+        } else if module == "Spike" {
+            target_path = self.perseus.join("thirdparty/riscv-isa-sim/build/xspike");
+        } else {
+            target_path = PathBuf::from("/usr/bin/zsh");
+        }
 
-        let metadata = fs::metadata(&build_model_path)?;
+        let metadata = fs::metadata(&target_path)?;
         let modified_time = metadata.modified()?;
 
         let duration_since_epoch = modified_time.duration_since(UNIX_EPOCH)?;
@@ -186,9 +193,7 @@ impl Integrator {
             let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Failed to execute git pull".to_string()).unwrap();
             return;
         }
-        let now = chrono::Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", format!("Succeed&&{}", timestamp)).unwrap();
+        let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Succeed").unwrap();
     }
 
     pub fn update_perseus(&self) -> Result<(), Box<dyn std::error::Error>> {
@@ -211,5 +216,51 @@ impl Integrator {
     pub fn get_perseus_update_status(&self) -> redis::RedisResult<String> {
         debug_fn!();
         self.con.lock().unwrap().get("KAMURA_INT_UPDATE_PERSEUS")
+    }
+
+    pub async fn rebuild_spike_handler(&self) {
+        debug_fn!();
+
+        let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Running").unwrap();
+        let spike_path = self.perseus.join("thirdparty/riscv-isa-sim");
+
+        // build spike
+        let pull_status = Command::new("sh")
+            .arg("-c")
+            .arg("./build.sh >/dev/null 2>&1")
+            .current_dir(spike_path)
+            .spawn()
+            .expect("Command failed to start")
+            .wait()
+            .await
+            .expect("Command failed to run");
+
+        if !pull_status.success() {
+            let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Failed to execute build.sh".to_string()).unwrap();
+            return;
+        }
+        let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Succeed").unwrap();
+    }
+
+    pub fn rebuild_spike(&self) -> Result<(), Box<dyn std::error::Error>> {
+        debug_fn!();
+        let spike_path = self.perseus.join("thirdparty/riscv-isa-sim");
+        if !spike_path.exists() {
+            Err("Spike path empty, maybe forget to init first?".into())
+        } else {
+            let integrator = Arc::new(self.clone());
+            tokio::task::spawn({
+                let integrator = integrator.clone();
+                async move {
+                    integrator.rebuild_spike_handler().await;
+                }
+            });
+            Ok(())
+        }
+    }
+
+    pub fn get_spike_rebuild_status(&self) -> redis::RedisResult<String> {
+        debug_fn!();
+        self.con.lock().unwrap().get("KAMURA_INT_REBUILD_SPIKE")
     }
 }

@@ -1,1 +1,1 @@
-export const kamura_engine_url = "http://localhost:9999"
+export const kamura_engine_url = "https://kamura-engine.malloc.fun"

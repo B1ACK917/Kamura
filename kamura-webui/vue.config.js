@@ -1,5 +1,12 @@
 const { defineConfig } = require('@vue/cli-service')
 module.exports = defineConfig({
   transpileDependencies: true,
-  lintOnSave: false
+  lintOnSave: false,
+  devServer: {
+    port: 8080,
+    allowedHosts: [
+      '.malloc.fun'
+    ],
+    webSocketServer: false,
+  },
 })

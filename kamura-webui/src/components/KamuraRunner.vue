@@ -55,7 +55,7 @@ export default {
     };
   },
   created() {
-    this.fetchAllTasks();
+    this.updateTaskStatuses();
     this.startStatusUpdateTimer();
   },
   beforeUnmount() {
@@ -63,28 +63,32 @@ export default {
   },
   methods: {
     startStatusUpdateTimer() {
-      this.intervalId = setInterval(this.updateTaskStatuses, 2500);
+      this.updateStatusTimer = setInterval(this.updateTaskStatuses, 2000);
     },
     stopStatusUpdateTimer() {
-      if (this.intervalId) {
-        clearInterval(this.intervalId);
-        this.intervalId = null;
-      }
+      clearInterval(this.updateStatusTimer);
     },
     async fetchAllTasks() {
       try {
         const response = await axios.get(`${kamura_engine_url}/getAllTasks`);
         if (response.data.success) {
-          this.tasks = response.data.tasks.map(task => ({
-            uuid: task,
-            status: 'Loading'
-          }));
+          const newTasks = response.data.tasks.filter(task => {
+            return !this.tasks.some(existingTask => existingTask.uuid === task);
+          });
+
+          newTasks.forEach(task => {
+            this.tasks.push({
+              uuid: task,
+              status: 'Loading'
+            });
+          });
         }
       } catch (error) {
         console.error('Error fetching tasks:', error);
       }
     },
     async updateTaskStatuses() {
+      await this.fetchAllTasks();
       for (let task of this.tasks) {
         try {
           const statusResponse = await axios.post(`${kamura_engine_url}/getTaskStatus`, {uuid: task.uuid});

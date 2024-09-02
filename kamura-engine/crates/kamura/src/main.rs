@@ -1,7 +1,7 @@
 mod router;
 mod utils;
 
-use crate::router::{add_task, flush_all, get_all_tasks, get_perseus_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_task_log, get_task_status, rebuild_perseus, root, update_perseus};
+use crate::router::{add_task, flush_all, get_all_tasks, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_spike_rebuild_status, get_task_log, get_task_status, rebuild_perseus, rebuild_spike, root, update_perseus};
 use crate::utils::cli;
 use axum::routing::{get, post};
 use axum::Router;
@@ -42,11 +42,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/getPerseusVersion", get(get_perseus_version))
         .route("/getPerseusDate", get(get_perseus_date))
         .route("/getPerseusStatus", get(get_perseus_status))
-        .route("/getPerseusBuildDate", get(get_perseus_build_date))
+        .route("/getBuildDate", post(get_build_date))
         .route("/rebuildPerseus", get(rebuild_perseus))
         .route("/getPerseusRebuildStatus", get(get_perseus_rebuild_status))
         .route("/updatePerseus", get(update_perseus))
         .route("/getPerseusUpdateStatus", get(get_perseus_update_status))
+        .route("/rebuildSpike", get(rebuild_spike))
+        .route("/getSpikeRebuildStatus", get(get_spike_rebuild_status))
         .with_state(kamura_integrator)
         .layer(cors);
     let listener = tokio::net::TcpListener::bind(bind_address).await?;

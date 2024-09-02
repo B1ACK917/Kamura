@@ -30,6 +30,11 @@ pub struct GetTaskPayload {
     uuid: String,
 }
 
+#[derive(Deserialize, Debug)]
+pub struct GetBuildDatePayload {
+    module: String,
+}
+
 pub async fn root() -> &'static str {
     debug_fn!();
     "Greetings From Kamura!"
@@ -124,9 +129,9 @@ pub async fn get_perseus_path(state: State<Integrator>) -> Json<CommonResponse> 
     Json(CommonResponse { success: true, message: state.get_perseus_path() })
 }
 
-pub async fn get_perseus_build_date(state: State<Integrator>) -> Json<CommonResponse> {
-    debug_fn!();
-    match state.get_build_date() {
+pub async fn get_build_date(state: State<Integrator>, Json(payload): Json<GetBuildDatePayload>) -> Json<CommonResponse> {
+    debug_fn!(payload);
+    match state.get_build_date(payload.module) {
         Ok(date) => {
             Json(CommonResponse { success: true, message: date })
         }
@@ -164,7 +169,11 @@ pub async fn get_perseus_rebuild_status(state: State<Integrator>) -> Json<Common
     debug_fn!();
     match state.get_perseus_rebuild_status() {
         Ok(status) => {
-            Json(CommonResponse { success: true, message: status })
+            if status.starts_with("Failed") {
+                Json(CommonResponse { success: false, message: status })
+            } else {
+                Json(CommonResponse { success: true, message: status })
+            }
         }
         Err(err) => {
             Json(CommonResponse { success: false, message: err.to_string() })
@@ -187,6 +196,34 @@ pub async fn update_perseus(state: State<Integrator>) -> Json<CommonResponse> {
 pub async fn get_perseus_update_status(state: State<Integrator>) -> Json<CommonResponse> {
     debug_fn!();
     match state.get_perseus_update_status() {
+        Ok(status) => {
+            if status.starts_with("Failed") {
+                Json(CommonResponse { success: false, message: status })
+            } else {
+                Json(CommonResponse { success: true, message: status })
+            }
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn rebuild_spike(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.rebuild_spike() {
+        Ok(_) => {
+            Json(CommonResponse { success: true, message: "".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_spike_rebuild_status(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.get_spike_rebuild_status() {
         Ok(status) => {
             if status.starts_with("Failed") {
                 Json(CommonResponse { success: false, message: status })
