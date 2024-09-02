@@ -29,7 +29,7 @@ impl Integrator {
         self.perseus.to_str().unwrap().to_string()
     }
 
-    pub fn get_perseus_version(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get_perseus_latest_commit_hash(&self) -> Result<String, Box<dyn std::error::Error>> {
         debug_fn!();
         let output = std::process::Command::new("git")
             .arg("rev-parse")
@@ -43,6 +43,26 @@ impl Integrator {
         } else {
             Err(format!(
                 "Failed to retrieve commit hash: {}",
+                String::from_utf8_lossy(&output.stderr)
+            ).into())
+        }
+    }
+
+    pub fn get_perseus_latest_commit_date(&self) -> Result<String, Box<dyn std::error::Error>> {
+        debug_fn!();
+        let output = std::process::Command::new("git")
+            .arg("log")
+            .arg("-1")
+            .arg("--format=%ci")
+            .current_dir(&self.perseus)
+            .output()?;
+
+        if output.status.success() {
+            let commit_date = String::from_utf8(output.stdout)?.trim().to_string();
+            Ok(commit_date)
+        } else {
+            Err(format!(
+                "Failed to retrieve commit date: {}",
                 String::from_utf8_lossy(&output.stderr)
             ).into())
         }
@@ -141,5 +161,55 @@ impl Integrator {
     pub fn get_perseus_rebuild_status(&self) -> redis::RedisResult<String> {
         debug_fn!();
         self.con.lock().unwrap().get("KAMURA_INT_REBUILD_PERSEUS")
+    }
+
+    pub async fn update_perseus_handler(&self) {
+        debug_fn!();
+
+        let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Running").unwrap();
+
+        // Step 1: Enter the perseus_path
+        let perseus_path = &self.perseus;
+
+        // Step 2: git pull
+        let pull_status = Command::new("sh")
+            .arg("-c")
+            .arg("git pull >/dev/null 2>&1")
+            .current_dir(perseus_path)
+            .spawn()
+            .expect("Command failed to start")
+            .wait()
+            .await
+            .expect("Command failed to run");
+
+        if !pull_status.success() {
+            let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Failed to execute git pull".to_string()).unwrap();
+            return;
+        }
+        let now = chrono::Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", format!("Succeed&&{}", timestamp)).unwrap();
+    }
+
+    pub fn update_perseus(&self) -> Result<(), Box<dyn std::error::Error>> {
+        debug_fn!();
+        let perseus_path = &self.perseus;
+        if !perseus_path.exists() {
+            Err(format!("Perseus path does not exist: {:?}", perseus_path).into())
+        } else {
+            let integrator = Arc::new(self.clone());
+            tokio::task::spawn({
+                let integrator = integrator.clone();
+                async move {
+                    integrator.update_perseus_handler().await;
+                }
+            });
+            Ok(())
+        }
+    }
+
+    pub fn get_perseus_update_status(&self) -> redis::RedisResult<String> {
+        debug_fn!();
+        self.con.lock().unwrap().get("KAMURA_INT_UPDATE_PERSEUS")
     }
 }

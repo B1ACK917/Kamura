@@ -97,7 +97,19 @@ pub async fn flush_all(mut state: State<Runner>) -> Json<CommonResponse> {
 
 pub async fn get_perseus_version(state: State<Integrator>) -> Json<CommonResponse> {
     debug_fn!();
-    match state.get_perseus_version() {
+    match state.get_perseus_latest_commit_hash() {
+        Ok(head) => {
+            Json(CommonResponse { success: true, message: head })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_perseus_date(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.get_perseus_latest_commit_date() {
         Ok(head) => {
             Json(CommonResponse { success: true, message: head })
         }
@@ -153,6 +165,34 @@ pub async fn get_perseus_rebuild_status(state: State<Integrator>) -> Json<Common
     match state.get_perseus_rebuild_status() {
         Ok(status) => {
             Json(CommonResponse { success: true, message: status })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn update_perseus(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.update_perseus() {
+        Ok(_) => {
+            Json(CommonResponse { success: true, message: "".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_perseus_update_status(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.get_perseus_update_status() {
+        Ok(status) => {
+            if status.starts_with("Failed") {
+                Json(CommonResponse { success: false, message: status })
+            } else {
+                Json(CommonResponse { success: true, message: status })
+            }
         }
         Err(err) => {
             Json(CommonResponse { success: false, message: err.to_string() })
