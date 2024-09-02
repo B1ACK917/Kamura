@@ -45,29 +45,40 @@
 <script>
 import axios from 'axios';
 import {SuccessFilled, CircleCloseFilled, QuestionFilled} from '@element-plus/icons-vue';
+import {kamura_engine_url} from "@/utils/consts";
 
 export default {
   name: 'KamuraRunner',
   data() {
     return {
       tasks: [],  // Store tasks with status and uuid
-      taskLog: '', // Store the log of the selected task
     };
   },
   created() {
-    // Fetch tasks every second
-    setInterval(this.fetchAllTasks, 2500);
+    this.fetchAllTasks();
+    this.startStatusUpdateTimer();
+  },
+  beforeUnmount() {
+    this.stopStatusUpdateTimer();
   },
   methods: {
+    startStatusUpdateTimer() {
+      this.intervalId = setInterval(this.updateTaskStatuses, 2500);
+    },
+    stopStatusUpdateTimer() {
+      if (this.intervalId) {
+        clearInterval(this.intervalId);
+        this.intervalId = null;
+      }
+    },
     async fetchAllTasks() {
       try {
-        const response = await axios.get('http://localhost:9999/getAllTasks');
+        const response = await axios.get(`${kamura_engine_url}/getAllTasks`);
         if (response.data.success) {
           this.tasks = response.data.tasks.map(task => ({
             uuid: task,
             status: 'Loading'
           }));
-          await this.updateTaskStatuses();
         }
       } catch (error) {
         console.error('Error fetching tasks:', error);
@@ -76,7 +87,7 @@ export default {
     async updateTaskStatuses() {
       for (let task of this.tasks) {
         try {
-          const statusResponse = await axios.post('http://localhost:9999/getTaskStatus', {uuid: task.uuid});
+          const statusResponse = await axios.post(`${kamura_engine_url}/getTaskStatus`, {uuid: task.uuid});
           if (statusResponse.data.success) {
             task.status = statusResponse.data.message;
           } else {
@@ -89,9 +100,8 @@ export default {
     },
     async fetchTaskLog(uuid) {
       try {
-        const response = await axios.post('http://localhost:9999/getTaskLog', {uuid});
+        const response = await axios.post(`${kamura_engine_url}/getTaskLog`, {uuid});
         if (response.data.success) {
-          // this.taskLog = response.data.log;
           let responseSpan = document.getElementById("log")
           responseSpan.innerHTML = response.data.message
         }
@@ -108,7 +118,7 @@ export default {
         case 'Running':
           return QuestionFilled;
         default:
-          return QuestionFilled; // Default icon if status is unknown
+          return QuestionFilled;
       }
     },
     getStatusColor(status) {
@@ -120,19 +130,15 @@ export default {
         case 'Running':
           return 'yellow';
         default:
-          return 'gray'; // Default color if status is unknown
+          return 'gray';
       }
     },
     async addTaskToRunner(workload, workloadType) {
       try {
-        const response = await axios.post('http://localhost:9999/addTask', {
+        const response = await axios.post(`${kamura_engine_url}/addTask`, {
           arch: 'simple',
           workload: workload,
           workload_type: workloadType
-        }, {
-          headers: {
-            'Content-Type': 'application/json'
-          }
         });
         console.log('Response:', response.data);
       } catch (error) {

@@ -1,6 +1,7 @@
 use axum::extract::State;
 use axum::Json;
 use colored::*;
+use kamura_integrator::Integrator;
 use kamura_runner::Runner;
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};
@@ -87,6 +88,71 @@ pub async fn flush_all(mut state: State<Runner>) -> Json<CommonResponse> {
     match state.flush_all() {
         Ok(_) => {
             Json(CommonResponse { success: true, message: "Flushed All Redis".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_perseus_version(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.get_perseus_version() {
+        Ok(head) => {
+            Json(CommonResponse { success: true, message: head })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_perseus_path(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    Json(CommonResponse { success: true, message: state.get_perseus_path() })
+}
+
+pub async fn get_perseus_build_date(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.get_build_date() {
+        Ok(date) => {
+            Json(CommonResponse { success: true, message: date })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_perseus_status(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.check_valid() {
+        true => {
+            Json(CommonResponse { success: true, message: "Valid".to_string() })
+        }
+        false => {
+            Json(CommonResponse { success: false, message: "Invalid".to_string() })
+        }
+    }
+}
+
+pub async fn rebuild_perseus(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.rebuild_perseus() {
+        Ok(_) => {
+            Json(CommonResponse { success: true, message: "".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_perseus_rebuild_status(state: State<Integrator>) -> Json<CommonResponse> {
+    debug_fn!();
+    match state.get_perseus_rebuild_status() {
+        Ok(status) => {
+            Json(CommonResponse { success: true, message: status })
         }
         Err(err) => {
             Json(CommonResponse { success: false, message: err.to_string() })
