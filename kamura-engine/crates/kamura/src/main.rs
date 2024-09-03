@@ -1,7 +1,7 @@
 mod router;
 mod utils;
 
-use crate::router::{add_task, flush_all, get_all_tasks, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_spike_rebuild_status, get_task_log, get_valid_workloads, rebuild_perseus, rebuild_spike, root, update_perseus, get_task_status};
+use crate::router::{add_task, flush_all, get_all_tasks, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_spike_rebuild_status, get_task_log, get_task_status, get_valid_workloads, rebuild_perseus, rebuild_spike, root, update_perseus};
 use crate::utils::cli;
 use axum::routing::{get, post};
 use axum::Router;
