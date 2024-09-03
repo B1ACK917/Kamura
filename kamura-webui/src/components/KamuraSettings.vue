@@ -1,5 +1,5 @@
 <template>
-  <el-container class="kamura-runner" style="height: 800px">
+  <el-container class="kamura-runner" style="height: 80vh">
     <el-aside width="400px">
       <el-scrollbar>
         <el-menu>
@@ -11,84 +11,86 @@
       </el-scrollbar>
     </el-aside>
 
-    <el-main title="Perseus Info" style="border-collapse: separate">
-      <el-descriptions>
-        <el-descriptions-item label="Perseus Path">{{ perseusPath }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Perseus Version">{{ perseusVersion }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Perseus Version Date">{{ perseusVersionDate }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Perseus Build Date">{{ perseusBuildDate }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Spike Build Date">{{ spikeBuildDate }}</el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Status">
-          <el-tag :type="perseusValid.type">{{ perseusValid.value }}</el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Update Perseus:">
-          <el-button circle color="#d1edc4" @click="submitUpdatePerseus()">
-            <el-icon size="small">
-              <RefreshLeft/>
-            </el-icon>
-          </el-button>
-          <el-tag :type="perseusUpdateStatus.type" style="margin-left: 16px">
-            <el-tooltip
-                class="box-item"
-                effect="dark"
-                :content="perseusUpdateStatus.value"
-                placement="top-start"
-            >
-              {{ perseusUpdateStatus.type }}
-            </el-tooltip>
-          </el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Rebuild Perseus:">
-          <el-button circle color="#d1edc4" @click="submitRebuildPerseus()">
-            <el-icon size="small">
-              <RefreshLeft/>
-            </el-icon>
-          </el-button>
-          <el-tag :type="perseusRebuildStatus.type" style="margin-left: 16px">
-            <el-tooltip
-                class="box-item"
-                effect="dark"
-                :content="perseusRebuildStatus.value"
-                placement="top-start"
-            >
-              {{ perseusRebuildStatus.type }}
-            </el-tooltip>
-          </el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
-      <el-descriptions>
-        <el-descriptions-item label="Rebuild Spike:">
-          <el-button circle color="#d1edc4" @click="submitRebuildSpike()">
-            <el-icon size="small">
-              <RefreshLeft/>
-            </el-icon>
-          </el-button>
-          <el-tag :type="spikeRebuildStatus.type" style="margin-left: 16px">
-            <el-tooltip
-                class="box-item"
-                effect="dark"
-                :content="spikeRebuildStatus.value"
-                placement="top-start"
-            >
-              {{ spikeRebuildStatus.type }}
-            </el-tooltip>
-          </el-tag>
-        </el-descriptions-item>
-      </el-descriptions>
+    <el-main title="Perseus Info" style="border-collapse: separate" align="left">
+      <el-space direction="vertical" alignment="normal" size="large">
+        <el-descriptions>
+          <el-descriptions-item label="Status">
+            <el-tag :type="perseusValid.type">{{ perseusValid.value }}</el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Perseus Path">{{ perseusPath }}</el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Perseus Version">{{ perseusVersion }}</el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Perseus Version Date">{{ perseusVersionDate }}</el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Perseus Build Date">{{ perseusBuildDate }}</el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Spike Build Date">{{ spikeBuildDate }}</el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Update Perseus:">
+            <el-button circle color="#d1edc4" @click="submitUpdatePerseus()">
+              <el-icon size="large">
+                <Refresh/>
+              </el-icon>
+            </el-button>
+            <el-tag :type="perseusUpdateStatus.type" style="margin-left: 16px">
+              <el-tooltip
+                  class="box-item"
+                  effect="dark"
+                  :content="perseusUpdateStatus.message"
+                  placement="top-start"
+              >
+                {{ perseusUpdateStatus.value }}
+              </el-tooltip>
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Rebuild Perseus:">
+            <el-button circle color="#d1edc4" @click="submitRebuildPerseus()">
+              <el-icon size="large">
+                <Refresh/>
+              </el-icon>
+            </el-button>
+            <el-tag :type="perseusRebuildStatus.type" style="margin-left: 16px">
+              <el-tooltip
+                  class="box-item"
+                  effect="dark"
+                  :content="perseusRebuildStatus.message"
+                  placement="top-start"
+              >
+                {{ perseusRebuildStatus.value }}
+              </el-tooltip>
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-descriptions>
+          <el-descriptions-item label="Rebuild Spike:">
+            <el-button circle color="#d1edc4" @click="submitRebuildSpike()">
+              <el-icon size="large">
+                <Refresh/>
+              </el-icon>
+            </el-button>
+            <el-tag :type="spikeRebuildStatus.type" style="margin-left: 16px">
+              <el-tooltip
+                  class="box-item"
+                  effect="dark"
+                  :content="spikeRebuildStatus.message"
+                  placement="top-start"
+              >
+                {{ spikeRebuildStatus.value }}
+              </el-tooltip>
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-space>
     </el-main>
   </el-container>
 </template>
@@ -113,28 +115,30 @@ export default {
       },
       perseusRebuildStatus: {
         type: 'info',
-        value: 'Unknown'
+        value: 'Unknown',
+        message: ''
       },
       perseusUpdateStatus: {
         type: 'info',
-        value: 'Unknown'
+        value: 'Unknown',
+        message: ''
       },
       spikeRebuildStatus: {
         type: 'info',
-        value: 'Unknown'
-      }
+        value: 'Unknown',
+        message: ''
+      },
+      wsList: []
     };
   },
   mounted() {
     this.fetchPerseusInfo();
-    this.startRebuildStatusPolling();
-    this.startUpdateStatusPolling();
-    this.startSpikeRebuildStatusPolling();
+    this.startUpdateAllStatus();
   },
   beforeUnmount() {
-    clearInterval(this.rebuildStatusInterval);
-    clearInterval(this.updateStatusInterval);
-    clearInterval(this.rebuildSpikeStatusInterval);
+    for (let ws of this.wsList) {
+      ws.close();
+    }
   },
   methods: {
     async fetchPerseusInfo() {
@@ -142,8 +146,8 @@ export default {
         const pathResponse = await axios.get(`${kamura_engine_url}/getPerseus`);
         const versionResponse = await axios.get(`${kamura_engine_url}/getPerseusVersion`);
         const versionDateResponse = await axios.get(`${kamura_engine_url}/getPerseusDate`);
-        const buildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`,{module:"Perseus"});
-        const spikeBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`,{module:"Spike"});
+        const buildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {module: "Perseus"});
+        const spikeBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {module: "Spike"});
         const validResponse = await axios.get(`${kamura_engine_url}/getPerseusStatus`);
 
         this.perseusPath = pathResponse.data.message;
@@ -157,57 +161,6 @@ export default {
         console.error('Failed to fetch Perseus information:', error);
       }
     },
-    async fetchRebuildStatus() {
-      try {
-        const response = await axios.get(`${kamura_engine_url}/getPerseusRebuildStatus`);
-        if (response.data.success) {
-          this.perseusRebuildStatus.value = response.data.message;
-          if (response.data.message === "Running") this.perseusRebuildStatus.type = 'info'
-          else this.perseusRebuildStatus.type = 'success'
-        } else {
-          this.perseusRebuildStatus = {
-            type: 'danger',
-            value: response.data.message
-          };
-        }
-      } catch (error) {
-        console.error('Failed to fetch Perseus rebuild status:', error);
-      }
-    },
-    async fetchUpdateStatus() {
-      try {
-        const response = await axios.get(`${kamura_engine_url}/getPerseusUpdateStatus`);
-        if (response.data.success) {
-          this.perseusUpdateStatus.value = response.data.message;
-          if (response.data.message === "Running") this.perseusUpdateStatus.type = 'info'
-          else this.perseusUpdateStatus.type = 'success'
-        } else {
-          this.perseusUpdateStatus = {
-            type: 'danger',
-            value: response.data.message
-          };
-        }
-      } catch (error) {
-        console.error('Failed to fetch Perseus update status:', error);
-      }
-    },
-    async fetchSpikeRebuildStatus() {
-      try {
-        const response = await axios.get(`${kamura_engine_url}/getSpikeRebuildStatus`);
-        if (response.data.success) {
-          this.spikeRebuildStatus.value = response.data.message;
-          if (response.data.message === "Running") this.spikeRebuildStatus.type = 'info'
-          else this.spikeRebuildStatus.type = 'success'
-        } else {
-          this.spikeRebuildStatus = {
-            type: 'danger',
-            value: response.data.message
-          };
-        }
-      } catch (error) {
-        console.error('Failed to fetch Spike rebuild status:', error);
-      }
-    },
     async submitRebuildPerseus() {
       await axios.get(`${kamura_engine_url}/rebuildPerseus`);
     },
@@ -217,17 +170,29 @@ export default {
     async submitRebuildSpike() {
       await axios.get(`${kamura_engine_url}/rebuildSpike`);
     },
-    startRebuildStatusPolling() {
-      this.fetchRebuildStatus();
-      this.rebuildStatusInterval = setInterval(this.fetchRebuildStatus, 2000);
+    async startUpdateStatus(updateObj, api) {
+      const ws = new WebSocket(`${kamura_engine_url}/ws/${api}`);
+      ws.onmessage = (message) => {
+        const data = JSON.parse(message.data);
+        switch (data.success) {
+          case true:
+            updateObj.type = "success";
+            updateObj.value = "Success";
+            updateObj.message = data.message;
+            break;
+          default:
+            updateObj.type = "danger";
+            updateObj.value = "Failed";
+            updateObj.message = data.message;
+            break;
+        }
+      }
+      this.wsList.push(ws);
     },
-    startUpdateStatusPolling() {
-      this.fetchUpdateStatus();
-      this.updateStatusInterval = setInterval(this.fetchUpdateStatus, 2000);
-    },
-    startSpikeRebuildStatusPolling() {
-      this.fetchSpikeRebuildStatus();
-      this.rebuildSpikeStatusInterval = setInterval(this.fetchSpikeRebuildStatus, 2000);
+    startUpdateAllStatus() {
+      this.startUpdateStatus(this.perseusRebuildStatus, "getPerseusRebuildStatus");
+      this.startUpdateStatus(this.perseusUpdateStatus, "getPerseusUpdateStatus");
+      this.startUpdateStatus(this.spikeRebuildStatus, "getSpikeRebuildStatus");
     }
   }
 }

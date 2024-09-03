@@ -1,6 +1,6 @@
 <template>
-  <el-container class="kamura-main" style="height: 500px">
-    <el-header style="text-align: right; font-size: 12px">
+  <el-container class="kamura-main" style="height: 80vh">
+    <el-header style="font-size: 12px">
       <el-tabs v-model="activeName" class="demo-tabs">
         <el-tab-pane label="Kamura-Viewer" name="first">
           <kamura-viewer></kamura-viewer>
@@ -35,7 +35,4 @@ export default {
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
-.el-menu--horizontal > .el-menu-item:nth-child(1) {
-  margin-right: auto;
-}
 </style>

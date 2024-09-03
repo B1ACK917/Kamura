@@ -1,5 +1,5 @@
 <template>
-  <el-container class="kamura-runner" style="height: 800px">
+  <el-container class="kamura-runner" style="height: 80vh">
     <el-aside width="400px">
       <el-scrollbar>
         <el-menu>
@@ -7,14 +7,25 @@
             <template #title>
               Workloads
             </template>
-            <el-menu-item-group>
-              <el-menu-item index="1-1" @click="addTaskToRunner('hello_trace','trace')">hello_trace</el-menu-item>
-              <el-menu-item index="1-2" @click="addTaskToRunner('dhry_riscv','trace')">dhry_riscv</el-menu-item>
-              <el-menu-item index="1-3" @click="addTaskToRunner('core_riscv','trace')">core_riscv</el-menu-item>
-              <el-menu-item index="1-4" @click="addTaskToRunner('dependency-p','elf')">dependency-p</el-menu-item>
-              <el-menu-item index="1-5" @click="addTaskToRunner('store-p','elf')">store-p</el-menu-item>
-              <el-menu-item index="1-6" @click="addTaskToRunner('store_simple-p','elf')">store_simple-p</el-menu-item>
-              <el-menu-item index="1-7" @click="addTaskToRunner('test-p','elf')">test-p</el-menu-item>
+            <!-- Trace Subgroup -->
+            <el-menu-item-group title="Trace">
+              <el-menu-item
+                  v-for="(workload, index) in traceWorkloads"
+                  :key="'trace-' + index"
+                  @click="addTaskToRunner(workload[0], workload[1])"
+              >
+                {{ workload[0] }}
+              </el-menu-item>
+            </el-menu-item-group>
+            <!-- ELF Subgroup -->
+            <el-menu-item-group title="Elf">
+              <el-menu-item
+                  v-for="(workload, index) in elfWorkloads"
+                  :key="'elf-' + index"
+                  @click="addTaskToRunner(workload[0], workload[1])"
+              >
+                {{ workload[0] }}
+              </el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
           <el-sub-menu index="2">
@@ -23,8 +34,8 @@
             </template>
             <el-menu-item-group>
               <el-menu-item v-for="task in tasks" :key="task.uuid" @click="fetchTaskLog(task.uuid)">
-                <el-icon :style="{ color: getStatusColor(task.status) }">
-                  <component :is="getIconComponent(task.status)"/>
+                <el-icon :style="{ color: task.color }">
+                  <component :is="task.icon"/>
                 </el-icon>
                 {{ task.uuid }}
               </el-menu-item>
@@ -51,22 +62,35 @@ export default {
   name: 'KamuraRunner',
   data() {
     return {
-      tasks: [],  // Store tasks with status and uuid
+      tasks: [],  // Store tasks with uuid, color, icon
+      traceWorkloads: [],
+      elfWorkloads: [],
+      wsList: []
     };
   },
-  created() {
-    this.updateTaskStatuses();
-    this.startStatusUpdateTimer();
+  async created() {
+    await this.fetchAllTasks();
+    await this.fetchWorkloads();
+    await this.startUpdateTaskStatuses();
   },
   beforeUnmount() {
-    this.stopStatusUpdateTimer();
+    for (let ws of this.wsList) {
+      ws.close();
+    }
   },
   methods: {
-    startStatusUpdateTimer() {
-      this.updateStatusTimer = setInterval(this.updateTaskStatuses, 2000);
-    },
-    stopStatusUpdateTimer() {
-      clearInterval(this.updateStatusTimer);
+    async fetchWorkloads() {
+      try {
+        const response = await axios.get('https://kamura-engine.malloc.fun/getValidWorkloads');
+        if (response.data.success) {
+          this.traceWorkloads = response.data.workloads.filter(workload => workload[1] === 'trace');
+          this.elfWorkloads = response.data.workloads.filter(workload => workload[1] === 'elf');
+        } else {
+          console.error('Failed to fetch workloads');
+        }
+      } catch (error) {
+        console.error('Error fetching workloads:', error);
+      }
     },
     async fetchAllTasks() {
       try {
@@ -79,7 +103,8 @@ export default {
           newTasks.forEach(task => {
             this.tasks.push({
               uuid: task,
-              status: 'Loading'
+              color: 'gray',
+              icon: "SuccessFilled"
             });
           });
         }
@@ -87,19 +112,31 @@ export default {
         console.error('Error fetching tasks:', error);
       }
     },
-    async updateTaskStatuses() {
-      await this.fetchAllTasks();
+    async startUpdateTaskStatuses() {
+      this.wsList = [];
       for (let task of this.tasks) {
-        try {
-          const statusResponse = await axios.post(`${kamura_engine_url}/getTaskStatus`, {uuid: task.uuid});
-          if (statusResponse.data.success) {
-            task.status = statusResponse.data.message;
-          } else {
-            task.status = 'Unknown';
+        const ws = new WebSocket(`${kamura_engine_url}/ws/getTaskStatus/${task.uuid}`);
+        ws.onmessage = (message) => {
+          switch (message.data) {
+            case "Succeed":
+              task.color = "green";
+              task.icon = "SuccessFilled";
+              break;
+            case "Failed":
+              task.color = "red";
+              task.icon = "SuccessFilled";
+              break;
+            case "Running":
+              task.color = "yellow";
+              task.icon = "SuccessFilled";
+              break;
+            default:
+              task.color = "gray";
+              task.icon = "SuccessFilled";
+              break;
           }
-        } catch (error) {
-          console.error('Error updating task status:', error);
         }
+        this.wsList.push(ws);
       }
     },
     async fetchTaskLog(uuid) {
@@ -113,30 +150,6 @@ export default {
         console.error('Error fetching task log:', error);
       }
     },
-    getIconComponent(status) {
-      switch (status) {
-        case 'Succeed':
-          return SuccessFilled;
-        case 'Failed':
-          return CircleCloseFilled;
-        case 'Running':
-          return QuestionFilled;
-        default:
-          return QuestionFilled;
-      }
-    },
-    getStatusColor(status) {
-      switch (status) {
-        case 'Succeed':
-          return 'green';
-        case 'Failed':
-          return 'red';
-        case 'Running':
-          return 'yellow';
-        default:
-          return 'gray';
-      }
-    },
     async addTaskToRunner(workload, workloadType) {
       try {
         const response = await axios.post(`${kamura_engine_url}/addTask`, {
@@ -148,6 +161,8 @@ export default {
       } catch (error) {
         console.error('Error:', error);
       }
+      await this.fetchAllTasks();
+      await this.startUpdateTaskStatuses();
     }
   }
 }

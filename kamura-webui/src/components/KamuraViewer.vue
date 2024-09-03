@@ -1,5 +1,5 @@
 <template>
-  <el-container class="kamura-viewer" style="height: 800px">
+  <el-container class="kamura-viewer" style="height: 80vh">
     <el-aside width="200px">
       <el-scrollbar>
         <el-menu :default-openeds="['2']">
