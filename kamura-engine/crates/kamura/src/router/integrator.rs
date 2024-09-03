@@ -3,7 +3,6 @@ use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use axum::Json;
-use colored::*;
 use kamura_core::consts::WS_INTERVAL_MILLI_SEC;
 use kamura_integrator::Integrator;
 use sayaka::debug_fn;

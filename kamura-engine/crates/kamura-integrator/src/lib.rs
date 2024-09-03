@@ -1,5 +1,4 @@
 use chrono::{DateTime, Local};
-use colored::*;
 use redis::Commands;
 use sayaka::debug_fn;
 use std::error::Error;

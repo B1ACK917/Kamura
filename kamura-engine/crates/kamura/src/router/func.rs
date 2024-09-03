@@ -1,4 +1,3 @@
-use colored::*;
 use kamura_core::consts::{ENGINE_AUTH_MD5_DIGEST, ENGINE_AUTH_MD5_NUM};
 use md5::compute;
 use sayaka::debug_fn;

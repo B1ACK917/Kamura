@@ -1,4 +1,3 @@
-use colored::*;
 use redis::Connection;
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};

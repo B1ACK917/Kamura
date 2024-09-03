@@ -2,7 +2,6 @@ use crate::router::auth;
 use crate::router::payloads::{Arch, ArchList, AuthorizedPayload, CommonResponse, GetArchPayload};
 use axum::extract::State;
 use axum::Json;
-use colored::*;
 use kamura_operator::{Operator, Topology, Units};
 use sayaka::debug_fn;
 

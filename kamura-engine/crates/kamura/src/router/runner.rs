@@ -4,7 +4,6 @@ use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use axum::Json;
-use colored::*;
 use kamura_core::consts::WS_INTERVAL_MILLI_SEC;
 use kamura_runner::Runner;
 use sayaka::debug_fn;

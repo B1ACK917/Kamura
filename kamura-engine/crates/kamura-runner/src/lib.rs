@@ -1,5 +1,4 @@
 use chrono;
-use colored::*;
 use redis::{Commands, RedisResult};
 use sayaka::{debug_fn, debug_var};
 use std::error::Error;

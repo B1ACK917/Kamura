@@ -1,5 +1,5 @@
-use serde::{Deserialize, Serialize};
 use kamura_operator::{Topology, Units};
+use serde::{Deserialize, Serialize};
 
 // OUT PAYLOADS
 #[derive(Serialize, Debug)]
