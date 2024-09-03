@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use kamura_operator::{Topology, Units};
 
 // OUT PAYLOADS
 #[derive(Serialize, Debug)]
@@ -21,9 +22,17 @@ pub struct Tasks {
 }
 
 #[derive(Serialize)]
-pub struct Arches {
+pub struct ArchList {
     pub success: bool,
     pub arches: Vec<String>,
+    pub message: String,
+}
+
+#[derive(Serialize)]
+pub struct Arch {
+    pub success: bool,
+    pub units: Units,
+    pub topology: Topology,
     pub message: String,
 }
 
@@ -49,4 +58,9 @@ pub struct GetBuildDatePayload {
 #[derive(Deserialize, Debug)]
 pub struct AuthorizedPayload {
     pub auth: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct GetArchPayload {
+    pub target: String,
 }
