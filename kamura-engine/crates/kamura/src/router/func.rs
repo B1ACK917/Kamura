@@ -8,7 +8,7 @@ use kamura_runner::Runner;
 use sayaka::debug_fn;
 use std::time::Duration;
 use tokio::time::sleep;
-use crate::router::consts::WS_INTERVAL_MILLI_SEC;
+use kamura_core::consts::WS_INTERVAL_MILLI_SEC;
 use crate::router::payloads::{AddTaskPayload, CommonResponse, GetBuildDatePayload, GetTaskPayload, Tasks, WorkloadsResponse};
 
 pub async fn root() -> &'static str {
