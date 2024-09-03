@@ -1,7 +1,8 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Local};
 use colored::*;
 use redis::Commands;
 use sayaka::debug_fn;
+use std::error::Error;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -15,7 +16,7 @@ pub struct Integrator {
 }
 
 impl Integrator {
-    pub fn new(perseus: &PathBuf, redis: &String) -> Result<Self, Box<dyn std::error::Error>> {
+    pub fn new(perseus: &PathBuf, redis: &String) -> Result<Self, Box<dyn Error>> {
         debug_fn!(perseus,redis);
         let client = redis::Client::open(redis.as_str())?;
         let con = client.get_connection()?;
@@ -29,7 +30,7 @@ impl Integrator {
         self.perseus.to_str().unwrap().to_string()
     }
 
-    pub fn get_perseus_latest_commit_hash(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get_perseus_latest_commit_hash(&self) -> Result<String, Box<dyn Error>> {
         debug_fn!();
         let output = std::process::Command::new("git")
             .arg("rev-parse")
@@ -48,7 +49,7 @@ impl Integrator {
         }
     }
 
-    pub fn get_perseus_latest_commit_date(&self) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get_perseus_latest_commit_date(&self) -> Result<String, Box<dyn Error>> {
         debug_fn!();
         let output = std::process::Command::new("git")
             .arg("log")
@@ -68,7 +69,7 @@ impl Integrator {
         }
     }
 
-    pub fn get_build_date(&self, module: String) -> Result<String, Box<dyn std::error::Error>> {
+    pub fn get_build_date(&self, module: String) -> Result<String, Box<dyn Error>> {
         debug_fn!();
         let target_path;
         if module == "Perseus" {
@@ -86,7 +87,7 @@ impl Integrator {
         let datetime = DateTime::from_timestamp(
             duration_since_epoch.as_secs() as i64,
             duration_since_epoch.subsec_nanos(),
-        ).ok_or("Failed to convert timestamp")?.with_timezone(&Utc);
+        ).ok_or("Failed to convert timestamp")?.with_timezone(&Local);
 
         let formatted_date = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
         Ok(formatted_date)
@@ -148,7 +149,7 @@ impl Integrator {
         let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_PERSEUS", "Succeed").unwrap();
     }
 
-    pub fn rebuild_perseus(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn rebuild_perseus(&self) -> Result<(), Box<dyn Error>> {
         debug_fn!();
         let perseus_path = &self.perseus;
         if !perseus_path.exists() {
@@ -166,7 +167,7 @@ impl Integrator {
     }
 
     pub fn get_perseus_rebuild_status(&self) -> redis::RedisResult<String> {
-        debug_fn!();
+        // debug_fn!();
         self.con.lock().unwrap().get("KAMURA_INT_REBUILD_PERSEUS")
     }
 
@@ -196,7 +197,7 @@ impl Integrator {
         let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Succeed").unwrap();
     }
 
-    pub fn update_perseus(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn update_perseus(&self) -> Result<(), Box<dyn Error>> {
         debug_fn!();
         let perseus_path = &self.perseus;
         if !perseus_path.exists() {
@@ -214,7 +215,7 @@ impl Integrator {
     }
 
     pub fn get_perseus_update_status(&self) -> redis::RedisResult<String> {
-        debug_fn!();
+        // debug_fn!();
         self.con.lock().unwrap().get("KAMURA_INT_UPDATE_PERSEUS")
     }
 
@@ -242,7 +243,7 @@ impl Integrator {
         let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Succeed").unwrap();
     }
 
-    pub fn rebuild_spike(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn rebuild_spike(&self) -> Result<(), Box<dyn Error>> {
         debug_fn!();
         let spike_path = self.perseus.join("thirdparty/riscv-isa-sim");
         if !spike_path.exists() {
@@ -260,7 +261,7 @@ impl Integrator {
     }
 
     pub fn get_spike_rebuild_status(&self) -> redis::RedisResult<String> {
-        debug_fn!();
+        // debug_fn!();
         self.con.lock().unwrap().get("KAMURA_INT_REBUILD_SPIKE")
     }
 }

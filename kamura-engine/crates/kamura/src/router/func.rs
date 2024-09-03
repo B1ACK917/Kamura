@@ -1,43 +1,31 @@
-use axum::extract::State;
+use axum::extract::ws::{Message, WebSocket};
+use axum::extract::{Path, State, WebSocketUpgrade};
+use axum::response::IntoResponse;
 use axum::Json;
 use colored::*;
 use kamura_integrator::Integrator;
 use kamura_runner::Runner;
 use sayaka::debug_fn;
-use serde::{Deserialize, Serialize};
-
-#[derive(Serialize)]
-pub struct CommonResponse {
-    success: bool,
-    message: String,
-}
-#[derive(Serialize)]
-pub struct Tasks {
-    success: bool,
-    tasks: Vec<String>,
-    message: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct AddTaskPayload {
-    arch: String,
-    workload: String,
-    workload_type: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct GetTaskPayload {
-    uuid: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct GetBuildDatePayload {
-    module: String,
-}
+use std::time::Duration;
+use tokio::time::sleep;
+use crate::router::consts::WS_INTERVAL_MILLI_SEC;
+use crate::router::payloads::{AddTaskPayload, CommonResponse, GetBuildDatePayload, GetTaskPayload, Tasks, WorkloadsResponse};
 
 pub async fn root() -> &'static str {
     debug_fn!();
     "Greetings From Kamura!"
+}
+
+pub async fn get_valid_workloads(state: State<Runner>) -> Json<WorkloadsResponse> {
+    debug_fn!();
+    match state.get_valid_workloads() {
+        Ok(workloads) => {
+            Json(WorkloadsResponse { success: true, workloads })
+        }
+        Err(_) => {
+            Json(WorkloadsResponse { success: false, workloads: Vec::new() })
+        }
+    }
 }
 
 pub async fn add_task(mut state: State<Runner>, Json(payload): Json<AddTaskPayload>) -> Json<CommonResponse> {
@@ -64,15 +52,27 @@ pub async fn get_task_log(state: State<Runner>, Json(payload): Json<GetTaskPaylo
     }
 }
 
-pub async fn get_task_status(state: State<Runner>, Json(payload): Json<GetTaskPayload>) -> Json<CommonResponse> {
-    debug_fn!(payload);
-    match state.get_task_status(&payload.uuid) {
-        Ok(content) => {
-            Json(CommonResponse { success: true, message: content })
+pub async fn get_task_status(ws: WebSocketUpgrade, Path(uuid): Path<String>, state: State<Runner>) -> impl IntoResponse {
+    debug_fn!();
+    ws.on_upgrade(|socket| get_task_status_handler(socket, state, uuid))
+}
+
+async fn get_task_status_handler(mut socket: WebSocket, state: State<Runner>, uuid: String) {
+    debug_fn!();
+    loop {
+        let sent;
+        match state.get_task_status(&uuid) {
+            Ok(status) => {
+                sent = socket.send(Message::Text(status)).await;
+            }
+            Err(err) => {
+                sent = socket
+                    .send(Message::Text(format!("Error: {}", err)))
+                    .await;
+            }
         }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
-        }
+        if sent.is_err() { break; }
+        sleep(Duration::from_millis(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
 
@@ -165,19 +165,30 @@ pub async fn rebuild_perseus(state: State<Integrator>) -> Json<CommonResponse> {
     }
 }
 
-pub async fn get_perseus_rebuild_status(state: State<Integrator>) -> Json<CommonResponse> {
+pub async fn get_perseus_rebuild_status(ws: WebSocketUpgrade, state: State<Integrator>) -> impl IntoResponse {
     debug_fn!();
-    match state.get_perseus_rebuild_status() {
-        Ok(status) => {
-            if status.starts_with("Failed") {
-                Json(CommonResponse { success: false, message: status })
-            } else {
-                Json(CommonResponse { success: true, message: status })
+    ws.on_upgrade(|socket| get_perseus_rebuild_status_handler(socket, state))
+}
+
+async fn get_perseus_rebuild_status_handler(mut socket: WebSocket, state: State<Integrator>) {
+    debug_fn!();
+    loop {
+        let data;
+        match state.get_perseus_rebuild_status() {
+            Ok(status) => {
+                if status.starts_with("Failed") {
+                    data = serde_json::to_string(&CommonResponse { success: false, message: status }).unwrap();
+                } else {
+                    data = serde_json::to_string(&CommonResponse { success: true, message: status }).unwrap();
+                }
+            }
+            Err(err) => {
+                data = serde_json::to_string(&CommonResponse { success: false, message: err.to_string() }).unwrap();
             }
         }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
-        }
+        let sent = socket.send(Message::Text(data)).await;
+        if sent.is_err() { break; }
+        sleep(Duration::from_secs(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
 
@@ -193,19 +204,30 @@ pub async fn update_perseus(state: State<Integrator>) -> Json<CommonResponse> {
     }
 }
 
-pub async fn get_perseus_update_status(state: State<Integrator>) -> Json<CommonResponse> {
+pub async fn get_perseus_update_status(ws: WebSocketUpgrade, state: State<Integrator>) -> impl IntoResponse {
     debug_fn!();
-    match state.get_perseus_update_status() {
-        Ok(status) => {
-            if status.starts_with("Failed") {
-                Json(CommonResponse { success: false, message: status })
-            } else {
-                Json(CommonResponse { success: true, message: status })
+    ws.on_upgrade(|socket| get_perseus_update_status_handler(socket, state))
+}
+
+async fn get_perseus_update_status_handler(mut socket: WebSocket, state: State<Integrator>) {
+    debug_fn!();
+    loop {
+        let data;
+        match state.get_perseus_update_status() {
+            Ok(status) => {
+                if status.starts_with("Failed") {
+                    data = serde_json::to_string(&CommonResponse { success: false, message: status }).unwrap();
+                } else {
+                    data = serde_json::to_string(&CommonResponse { success: true, message: status }).unwrap();
+                }
+            }
+            Err(err) => {
+                data = serde_json::to_string(&CommonResponse { success: false, message: err.to_string() }).unwrap();
             }
         }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
-        }
+        let sent = socket.send(Message::Text(data)).await;
+        if sent.is_err() { break; }
+        sleep(Duration::from_secs(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
 
@@ -221,18 +243,29 @@ pub async fn rebuild_spike(state: State<Integrator>) -> Json<CommonResponse> {
     }
 }
 
-pub async fn get_spike_rebuild_status(state: State<Integrator>) -> Json<CommonResponse> {
+pub async fn get_spike_rebuild_status(ws: WebSocketUpgrade, state: State<Integrator>) -> impl IntoResponse {
     debug_fn!();
-    match state.get_spike_rebuild_status() {
-        Ok(status) => {
-            if status.starts_with("Failed") {
-                Json(CommonResponse { success: false, message: status })
-            } else {
-                Json(CommonResponse { success: true, message: status })
+    ws.on_upgrade(|socket| get_spike_rebuild_status_handler(socket, state))
+}
+
+async fn get_spike_rebuild_status_handler(mut socket: WebSocket, state: State<Integrator>) {
+    debug_fn!();
+    loop {
+        let data;
+        match state.get_spike_rebuild_status() {
+            Ok(status) => {
+                if status.starts_with("Failed") {
+                    data = serde_json::to_string(&CommonResponse { success: false, message: status }).unwrap();
+                } else {
+                    data = serde_json::to_string(&CommonResponse { success: true, message: status }).unwrap();
+                }
+            }
+            Err(err) => {
+                data = serde_json::to_string(&CommonResponse { success: false, message: err.to_string() }).unwrap();
             }
         }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
-        }
+        let sent = socket.send(Message::Text(data)).await;
+        if sent.is_err() { break; }
+        sleep(Duration::from_secs(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
