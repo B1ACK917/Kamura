@@ -188,7 +188,7 @@ async fn get_perseus_rebuild_status_handler(mut socket: WebSocket, state: State<
         }
         let sent = socket.send(Message::Text(data)).await;
         if sent.is_err() { break; }
-        sleep(Duration::from_secs(WS_INTERVAL_MILLI_SEC)).await;
+        sleep(Duration::from_millis(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
 
@@ -227,7 +227,7 @@ async fn get_perseus_update_status_handler(mut socket: WebSocket, state: State<I
         }
         let sent = socket.send(Message::Text(data)).await;
         if sent.is_err() { break; }
-        sleep(Duration::from_secs(WS_INTERVAL_MILLI_SEC)).await;
+        sleep(Duration::from_millis(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
 
@@ -266,6 +266,6 @@ async fn get_spike_rebuild_status_handler(mut socket: WebSocket, state: State<In
         }
         let sent = socket.send(Message::Text(data)).await;
         if sent.is_err() { break; }
-        sleep(Duration::from_secs(WS_INTERVAL_MILLI_SEC)).await;
+        sleep(Duration::from_millis(WS_INTERVAL_MILLI_SEC)).await;
     }
 }

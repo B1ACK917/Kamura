@@ -176,9 +176,18 @@ export default {
         const data = JSON.parse(message.data);
         switch (data.success) {
           case true:
-            updateObj.type = "success";
-            updateObj.value = "Success";
-            updateObj.message = data.message;
+            switch (data.message) {
+              case 'Succeed':
+                updateObj.type = "success";
+                updateObj.value = "Success";
+                updateObj.message = data.message;
+                break;
+              case 'Running':
+                updateObj.type = "info";
+                updateObj.value = "Progress";
+                updateObj.message = data.message;
+                break;
+            }
             break;
           default:
             updateObj.type = "danger";
