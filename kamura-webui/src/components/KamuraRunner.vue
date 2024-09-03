@@ -124,15 +124,15 @@ export default {
               break;
             case "Failed":
               task.color = "red";
-              task.icon = "SuccessFilled";
+              task.icon = "CircleCloseFilled";
               break;
             case "Running":
               task.color = "yellow";
-              task.icon = "SuccessFilled";
+              task.icon = "InfoFilled";
               break;
             default:
               task.color = "gray";
-              task.icon = "SuccessFilled";
+              task.icon = "InfoFilled";
               break;
           }
         }
