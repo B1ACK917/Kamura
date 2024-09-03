@@ -35,3 +35,8 @@ pub struct GetTaskPayload {
 pub struct GetBuildDatePayload {
     pub module: String,
 }
+
+#[derive(Deserialize, Debug)]
+pub struct AuthorizedPayload {
+    pub auth: String,
+}

@@ -1,7 +1,7 @@
 mod router;
 mod utils;
 
-use crate::router::{add_task, flush_all, get_all_tasks, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_spike_rebuild_status, get_task_log, get_task_status, get_valid_workloads, rebuild_perseus, rebuild_spike, root, update_perseus};
+use crate::router::{add_task, flush_all, get_all_tasks, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_spike_rebuild_status, get_task_log, get_task_status, get_valid_workloads, rebuild_perseus, rebuild_spike, remove_all_tasks, root, update_perseus};
 use crate::utils::cli;
 use axum::routing::{get, post};
 use axum::Router;
@@ -36,7 +36,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/addTask", post(add_task))
         .route("/getTaskLog", post(get_task_log))
         .route("/getAllTasks", get(get_all_tasks))
-        .route("/flushAll", get(flush_all))
+        .route("/flushAll", post(flush_all))
+        .route("/removeAllTasks", post(remove_all_tasks))
         .route("/ws/getTaskStatus/:uuid", get(get_task_status))
         .with_state(kamura_runner)
         .route("/getPerseus", get(get_perseus_path))

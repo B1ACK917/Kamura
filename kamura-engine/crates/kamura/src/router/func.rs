@@ -1,15 +1,21 @@
-use crate::router::payloads::{AddTaskPayload, CommonResponse, GetBuildDatePayload, GetTaskPayload, Tasks, WorkloadsResponse};
+use crate::router::payloads::{AddTaskPayload, AuthorizedPayload, CommonResponse, GetBuildDatePayload, GetTaskPayload, Tasks, WorkloadsResponse};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
 use axum::Json;
 use colored::*;
-use kamura_core::consts::WS_INTERVAL_MILLI_SEC;
+use kamura_core::consts::{ENGINE_AUTH_MD5_DIGEST, ENGINE_AUTH_MD5_NUM, WS_INTERVAL_MILLI_SEC};
 use kamura_integrator::Integrator;
 use kamura_runner::Runner;
+use md5::compute;
 use sayaka::debug_fn;
 use std::time::Duration;
 use tokio::time::sleep;
+
+pub fn auth(auth_str: String) -> bool {
+    debug_fn!(auth_str);
+    format!("{:x}", compute(&auth_str)) == ENGINE_AUTH_MD5_DIGEST && auth_str.len() == ENGINE_AUTH_MD5_NUM
+}
 
 pub async fn root() -> &'static str {
     debug_fn!();
@@ -88,11 +94,29 @@ pub async fn get_all_tasks(mut state: State<Runner>) -> Json<Tasks> {
     }
 }
 
-pub async fn flush_all(mut state: State<Runner>) -> Json<CommonResponse> {
+pub async fn flush_all(mut state: State<Runner>, Json(payload): Json<AuthorizedPayload>) -> Json<CommonResponse> {
     debug_fn!();
+    if !auth(payload.auth) {
+        return Json(CommonResponse { success: false, message: "Authorize Failed".to_string() });
+    }
     match state.flush_all() {
         Ok(_) => {
             Json(CommonResponse { success: true, message: "Flushed All Redis".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn remove_all_tasks(mut state: State<Runner>, Json(payload): Json<AuthorizedPayload>) -> Json<CommonResponse> {
+    debug_fn!();
+    if !auth(payload.auth) {
+        return Json(CommonResponse { success: false, message: "Authorize Failed".to_string() });
+    }
+    match state.remove_all_tasks() {
+        Ok(_) => {
+            Json(CommonResponse { success: true, message: "Removed All Tasks from Redis".to_string() })
         }
         Err(err) => {
             Json(CommonResponse { success: false, message: err.to_string() })

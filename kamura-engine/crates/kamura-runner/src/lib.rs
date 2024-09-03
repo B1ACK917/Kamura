@@ -1,6 +1,6 @@
 use chrono;
 use colored::*;
-use redis::Commands;
+use redis::{Commands, RedisResult};
 use sayaka::{debug_fn, debug_var};
 use std::error::Error;
 use std::fs;
@@ -132,12 +132,12 @@ impl Runner {
         Ok(contents)
     }
 
-    pub fn get_task_status(&self, uuid: &String) -> redis::RedisResult<String> {
+    pub fn get_task_status(&self, uuid: &String) -> RedisResult<String> {
         // debug_fn!(uuid);
         self.con.lock().unwrap().get(format!("KAMURA_TASK_{}", uuid))
     }
 
-    pub fn get_all_tasks(&mut self) -> redis::RedisResult<Vec<String>> {
+    pub fn get_all_tasks(&mut self) -> RedisResult<Vec<String>> {
         // debug_fn!();
         self.con.lock().unwrap().smembers("KAMURA_TASKS")
     }
@@ -145,5 +145,15 @@ impl Runner {
     pub fn flush_all(&mut self) -> Result<(), Box<dyn Error>> {
         debug_fn!();
         Ok(redis::cmd("FLUSHALL").exec(&mut self.con.lock().unwrap())?)
+    }
+
+    pub fn remove_all_tasks(&mut self) -> Result<(), Box<dyn Error>> {
+        debug_fn!();
+        let tasks: Vec<String> = self.con.lock().unwrap().smembers("KAMURA_TASKS")?;
+        for uuid in tasks {
+            self.con.lock().unwrap().del(format!("KAMURA_TASK_{}", uuid))?;
+            self.con.lock().unwrap().srem("KAMURA_TASKS", uuid)?;
+        }
+        Ok(())
     }
 }
