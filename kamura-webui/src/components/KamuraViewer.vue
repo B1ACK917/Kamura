@@ -2,15 +2,20 @@
   <el-container class="kamura-viewer" style="height: 80vh">
     <el-aside width="200px">
       <el-scrollbar>
-        <el-menu :default-openeds="['2']">
+        <el-menu :default-openeds="['1','2']">
           <el-sub-menu index="1">
             <template #title>
               Arches
             </template>
             <el-menu-item-group>
-              <el-menu-item index="1-1">simple</el-menu-item>
-              <el-menu-item index="1-2">alu8</el-menu-item>
-              <el-menu-item index="1-3">no-lsu2</el-menu-item>
+              <el-menu-item
+                  v-for="(arch, index) in this.arches"
+                  :key="index"
+                  :index="`1-${index + 1}`"
+                  @click="fetchRawArch(arch)"
+              >
+                {{ arch }}
+              </el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
 
@@ -31,7 +36,7 @@
     </el-aside>
 
     <el-main>
-      <div ref="cyRef" style="width: 99%; height: 600px; text-align: left" class="cyRef"></div>
+      <div ref="cyRef" style="width: 80%; height: 75vh; text-align: left" class="cyRef"></div>
     </el-main>
 
   </el-container>
@@ -40,29 +45,50 @@
 
 <script>
 import cytoscape from 'cytoscape';
-import {parseYaml, parseBindings} from '@/utils/funcs';
+import {parseBindings} from '@/utils/funcs';
 import {options} from '@/utils/layout';
+import {kamura_engine_url} from "@/utils/consts";
+import axios from "axios";
 
 
 export default {
   name: 'KamuraViewer',
   data() {
     return {
+      arches: [],
       cy: null,
       cyElements: [],
       removedNodes: [],
     };
   },
-  async mounted() {
-    const response = await fetch('/simple.yaml');
-    const yamlText = await response.text();
-    const data = parseYaml(yamlText);
-    if (data) {
-      const bindingTopology = data['top.extension.topo_extensions']['binding_topology'];
-      this.initCytoscape(bindingTopology);
-    }
+  mounted() {
+    this.fetchArches();
   },
   methods: {
+    async fetchArches() {
+      try {
+        const response = await axios.get(`${kamura_engine_url}/listArches`);
+        const data = response.data;
+        if (data.success) {
+          this.arches = data.arches;
+        } else {
+          console.error("Failed to fetch arches:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching arches:", error);
+      }
+    },
+    async fetchRawArch(target) {
+      try {
+        const response = await axios.post(`${kamura_engine_url}/getRawArch`, {
+          target
+        });
+        const data = response.data;
+        console.log(data);
+      } catch (error) {
+        console.error("Error fetching arches:", error);
+      }
+    },
     initCytoscape(bindingTopology) {
       this.cyElements = parseBindings(bindingTopology);
 
