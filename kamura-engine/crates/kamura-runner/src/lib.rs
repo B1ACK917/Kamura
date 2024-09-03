@@ -142,11 +142,6 @@ impl Runner {
         self.con.lock().unwrap().smembers("KAMURA_TASKS")
     }
 
-    pub fn flush_all(&mut self) -> Result<(), Box<dyn Error>> {
-        debug_fn!();
-        Ok(redis::cmd("FLUSHALL").exec(&mut self.con.lock().unwrap())?)
-    }
-
     pub fn remove_all_tasks(&mut self) -> Result<(), Box<dyn Error>> {
         debug_fn!();
         let tasks: Vec<String> = self.con.lock().unwrap().smembers("KAMURA_TASKS")?;

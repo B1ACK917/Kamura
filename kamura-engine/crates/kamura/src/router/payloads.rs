@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 
+// OUT PAYLOADS
 #[derive(Serialize, Debug)]
 pub struct CommonResponse {
     pub success: bool,
@@ -7,7 +8,7 @@ pub struct CommonResponse {
 }
 
 #[derive(Serialize)]
-pub struct WorkloadsResponse {
+pub struct Workloads {
     pub success: bool,
     pub workloads: Vec<[String; 2]>,
 }
@@ -18,6 +19,15 @@ pub struct Tasks {
     pub tasks: Vec<String>,
     pub message: String,
 }
+
+#[derive(Serialize)]
+pub struct Arches {
+    pub success: bool,
+    pub arches: Vec<String>,
+    pub message: String,
+}
+
+// IN PAYLOADS
 
 #[derive(Deserialize, Debug)]
 pub struct AddTaskPayload {

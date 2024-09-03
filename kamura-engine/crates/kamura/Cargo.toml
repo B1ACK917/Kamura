@@ -12,6 +12,7 @@ clap = { version = "4.5.16", features = ["derive"] }
 colored = "2.1.0"
 sayaka = { path = "../sayaka" }
 kamura-core = { path = "../kamura-core" }
+kamura-operator = { path = "../kamura-operator" }
 kamura-runner = { path = "../kamura-runner" }
 kamura-integrator = { path = "../kamura-integrator" }
 serde = { version = "1.0.209", features = ["derive"] }
