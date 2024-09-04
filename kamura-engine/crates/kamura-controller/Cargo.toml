@@ -1,6 +1,6 @@
 [package]
-name = "kamura-operator"
-version = "0.2.0"
+name = "kamura-controller"
+version = "0.1.0"
 edition.workspace = true
 authors.workspace = true
 
@@ -8,6 +8,3 @@ authors.workspace = true
 sayaka = { path = "../sayaka" }
 kamura-core = { path = "../kamura-core" }
 redis = "0.26.1"
-chrono = "0.4.38"
-serde_json = "1.0.127"
-serde = { version = "1.0.209", features = ["derive"] }

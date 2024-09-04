@@ -1,5 +1,4 @@
-use crate::router::auth;
-use crate::router::payloads::{AddTaskPayload, AuthorizedPayload, CommonResponse, GetTaskPayload, Tasks, Workloads};
+use crate::router::payloads::{AddTaskPayload, CommonResponse, GetTaskPayload, Tasks, Workloads};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
@@ -83,21 +82,6 @@ pub async fn get_all_tasks(mut state: State<Runner>) -> Json<Tasks> {
         }
         Err(err) => {
             Json(Tasks { success: false, tasks: Vec::new(), message: err.to_string() })
-        }
-    }
-}
-
-pub async fn remove_all_tasks(mut state: State<Runner>, Json(payload): Json<AuthorizedPayload>) -> Json<CommonResponse> {
-    debug_fn!();
-    if !auth(payload.auth) {
-        return Json(CommonResponse { success: false, message: "Authorize Failed".to_string() });
-    }
-    match state.remove_all_tasks() {
-        Ok(_) => {
-            Json(CommonResponse { success: true, message: "Removed All Tasks from Redis".to_string() })
-        }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
         }
     }
 }

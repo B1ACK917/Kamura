@@ -1,4 +1,3 @@
-use chrono;
 use redis::{Commands, RedisResult};
 use sayaka::{debug_fn, debug_var};
 use std::error::Error;
@@ -7,6 +6,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::process::Command;
 use uuid::Uuid;
+use kamura_core::consts::RUNNER_TASKS_SET_NAME;
 
 #[derive(Clone)]
 pub struct Runner {
@@ -88,7 +88,6 @@ impl Runner {
             );
         }
         debug_var!(command_str);
-        let _: () = self.con.lock().unwrap().set(format!("KAMURA_TASK_{}", uuid).as_str(), "Running").unwrap();
         let status = Command::new("sh")
             .arg("-c")
             .arg(command_str)
@@ -100,9 +99,9 @@ impl Runner {
             .expect("Process didn't complete successfully");
 
         if status.success() {
-            let _: () = self.con.lock().unwrap().set(format!("KAMURA_TASK_{}", uuid).as_str(), "Succeed").unwrap();
+            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), "Succeed").unwrap();
         } else {
-            let _: () = self.con.lock().unwrap().set(format!("KAMURA_TASK_{}", uuid).as_str(), "Failed").unwrap();
+            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), "Failed").unwrap();
         }
     }
 
@@ -121,7 +120,7 @@ impl Runner {
             }
         });
 
-        self.con.lock().unwrap().sadd("KAMURA_TASKS", uuid.to_string().as_str())?;
+        self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, uuid.to_string().as_str(), "Running")?;
         Ok(uuid)
     }
 
@@ -133,21 +132,11 @@ impl Runner {
 
     pub fn get_task_status(&self, uuid: &String) -> RedisResult<String> {
         // debug_fn!(uuid);
-        self.con.lock().unwrap().get(format!("KAMURA_TASK_{}", uuid))
+        self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}"))
     }
 
     pub fn get_all_tasks(&mut self) -> RedisResult<Vec<String>> {
         // debug_fn!();
-        self.con.lock().unwrap().smembers("KAMURA_TASKS")
-    }
-
-    pub fn remove_all_tasks(&mut self) -> Result<(), Box<dyn Error>> {
-        debug_fn!();
-        let tasks: Vec<String> = self.con.lock().unwrap().smembers("KAMURA_TASKS")?;
-        for uuid in tasks {
-            self.con.lock().unwrap().del(format!("KAMURA_TASK_{}", uuid))?;
-            self.con.lock().unwrap().srem("KAMURA_TASKS", uuid)?;
-        }
-        Ok(())
+        self.con.lock().unwrap().hkeys(RUNNER_TASKS_SET_NAME)
     }
 }

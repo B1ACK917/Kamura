@@ -1,39 +1,9 @@
-use crate::router::auth;
-use crate::router::payloads::{Arch, ArchList, AuthorizedPayload, CommonResponse, GetArchPayload, RawArch, SaveArchPayload};
+use crate::router::payloads::{Arch, ArchList, CommonResponse, GetArchPayload, RawArch, SaveArchPayload};
 use axum::extract::State;
 use axum::Json;
 use kamura_operator::{Operator, Topology, Units};
 use sayaka::debug_fn;
 
-pub async fn flush_arch_elements(mut state: State<Operator>, Json(payload): Json<AuthorizedPayload>) -> Json<CommonResponse> {
-    debug_fn!();
-    if !auth(payload.auth) {
-        return Json(CommonResponse { success: false, message: "Authorize Failed".to_string() });
-    }
-    match state.flush_arch_elements() {
-        Ok(_) => {
-            Json(CommonResponse { success: true, message: "Flushed All Arch Elements".to_string() })
-        }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
-        }
-    }
-}
-
-pub async fn flush_all(mut state: State<Operator>, Json(payload): Json<AuthorizedPayload>) -> Json<CommonResponse> {
-    debug_fn!();
-    if !auth(payload.auth) {
-        return Json(CommonResponse { success: false, message: "Authorize Failed".to_string() });
-    }
-    match state.flush_all() {
-        Ok(_) => {
-            Json(CommonResponse { success: true, message: "Flushed All Redis".to_string() })
-        }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
-        }
-    }
-}
 
 pub async fn list_arches(state: State<Operator>) -> Json<ArchList> {
     debug_fn!();

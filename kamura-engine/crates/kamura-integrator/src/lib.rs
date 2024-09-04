@@ -1,4 +1,5 @@
 use chrono::{DateTime, Local};
+use kamura_core::consts::{INTEGRATOR_PERSEUS_REBUILD, INTEGRATOR_PERSEUS_UPDATE, INTEGRATOR_SPIKE_REBUILD, INTEGRATOR_TASKS_SET_NAME};
 use redis::Commands;
 use sayaka::debug_fn;
 use std::error::Error;
@@ -101,7 +102,7 @@ impl Integrator {
     pub async fn rebuild_perseus_handler(&self) {
         debug_fn!();
 
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_PERSEUS", "Running").unwrap();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, "Running").unwrap();
 
         // Step 1: Enter the perseus_path
         let perseus_path = &self.perseus;
@@ -124,7 +125,7 @@ impl Integrator {
             .expect("Command failed to run");
 
         if !cmake_status.success() {
-            let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_PERSEUS", "Failed to execute cmake -Bbuild".to_string()).unwrap();
+            let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, "Failed to execute cmake -Bbuild".to_string()).unwrap();
             return;
         }
 
@@ -140,12 +141,11 @@ impl Integrator {
             .expect("Command failed to run");
 
         if !make_status.success() {
-            let _: () = self.con.lock().unwrap()
-                .set("KAMURA_INT_REBUILD_PERSEUS", "Failed to execute make".to_string()).unwrap();
+            let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, "Failed to execute make".to_string()).unwrap();
             return;
         }
 
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_PERSEUS", "Succeed").unwrap();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, "Succeed").unwrap();
     }
 
     pub fn rebuild_perseus(&self) -> Result<(), Box<dyn Error>> {
@@ -167,13 +167,13 @@ impl Integrator {
 
     pub fn get_perseus_rebuild_status(&self) -> redis::RedisResult<String> {
         // debug_fn!();
-        self.con.lock().unwrap().get("KAMURA_INT_REBUILD_PERSEUS")
+        self.con.lock().unwrap().hget(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD)
     }
 
     pub async fn update_perseus_handler(&self) {
         debug_fn!();
 
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Running").unwrap();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, "Running").unwrap();
 
         // Step 1: Enter the perseus_path
         let perseus_path = &self.perseus;
@@ -190,10 +190,10 @@ impl Integrator {
             .expect("Command failed to run");
 
         if !pull_status.success() {
-            let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Failed to execute git pull".to_string()).unwrap();
+            let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, "Failed to execute git pull".to_string()).unwrap();
             return;
         }
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_UPDATE_PERSEUS", "Succeed").unwrap();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, "Succeed").unwrap();
     }
 
     pub fn update_perseus(&self) -> Result<(), Box<dyn Error>> {
@@ -215,13 +215,13 @@ impl Integrator {
 
     pub fn get_perseus_update_status(&self) -> redis::RedisResult<String> {
         // debug_fn!();
-        self.con.lock().unwrap().get("KAMURA_INT_UPDATE_PERSEUS")
+        self.con.lock().unwrap().hget(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE)
     }
 
     pub async fn rebuild_spike_handler(&self) {
         debug_fn!();
 
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Running").unwrap();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, "Running").unwrap();
         let spike_path = self.perseus.join("thirdparty/riscv-isa-sim");
 
         // build spike
@@ -236,10 +236,10 @@ impl Integrator {
             .expect("Command failed to run");
 
         if !pull_status.success() {
-            let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Failed to execute build.sh".to_string()).unwrap();
+            let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, "Failed to execute build.sh".to_string()).unwrap();
             return;
         }
-        let _: () = self.con.lock().unwrap().set("KAMURA_INT_REBUILD_SPIKE", "Succeed").unwrap();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, "Succeed").unwrap();
     }
 
     pub fn rebuild_spike(&self) -> Result<(), Box<dyn Error>> {
@@ -261,6 +261,6 @@ impl Integrator {
 
     pub fn get_spike_rebuild_status(&self) -> redis::RedisResult<String> {
         // debug_fn!();
-        self.con.lock().unwrap().get("KAMURA_INT_REBUILD_SPIKE")
+        self.con.lock().unwrap().hget(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD)
     }
 }

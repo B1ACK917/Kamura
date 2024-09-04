@@ -1,6 +1,7 @@
 mod utils;
 
 use crate::utils::convert_to_cy_elements;
+use kamura_core::consts::OPERATOR_ARCH_LAYOUTS_SET_NAME;
 use redis::{Commands, Connection, RedisResult};
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};
@@ -109,7 +110,7 @@ impl Operator {
         if reset_elements {
             elements = convert_to_cy_elements(&units, &topology)?;
         } else {
-            let fetched: RedisResult<String> = self.con.lock().unwrap().hget("KAMURA_OP_ELEMENTS", format!("{target_arch}"));
+            let fetched: RedisResult<String> = self.con.lock().unwrap().hget(OPERATOR_ARCH_LAYOUTS_SET_NAME, format!("{target_arch}"));
             if fetched.is_err() {
                 elements = convert_to_cy_elements(&units, &topology)?;
             } else {
@@ -134,21 +135,7 @@ impl Operator {
         let topology_file = File::create(topology_path)?;
         serde_json::to_writer_pretty(topology_file, &topology)?;
 
-        let _: () = self.con.lock().unwrap().hset("KAMURA_OP_ELEMENTS", format!("{arch_name}"), serialized_data)?;
+        let _: () = self.con.lock().unwrap().hset(OPERATOR_ARCH_LAYOUTS_SET_NAME, format!("{arch_name}"), serialized_data)?;
         Ok(())
-    }
-
-    pub fn flush_arch_elements(&mut self) -> Result<(), Box<dyn Error>> {
-        debug_fn!();
-        let arches: Vec<String> = self.con.lock().unwrap().hkeys("KAMURA_OP_ELEMENTS")?;
-        for arch in arches {
-            self.con.lock().unwrap().hdel("KAMURA_OP_ELEMENTS", format!("{arch}"))?;
-        }
-        Ok(())
-    }
-
-    pub fn flush_all(&mut self) -> Result<(), Box<dyn Error>> {
-        debug_fn!();
-        Ok(redis::cmd("FLUSHALL").exec(&mut self.con.lock().unwrap())?)
     }
 }

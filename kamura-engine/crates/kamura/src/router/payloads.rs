@@ -68,6 +68,7 @@ pub struct GetBuildDatePayload {
 #[derive(Deserialize, Debug)]
 pub struct AuthorizedPayload {
     pub auth: String,
+    pub target: String,
 }
 
 #[derive(Deserialize, Debug)]

@@ -1,6 +1,6 @@
 [package]
 name = "kamura"
-version = "0.3.0"
+version = "0.4.0"
 edition.workspace = true
 authors.workspace = true
 
@@ -9,15 +9,14 @@ authors.workspace = true
 [dependencies]
 axum = { version = "0.7.5", features = ["ws"] }
 clap = { version = "4.5.16", features = ["derive"] }
-colored = "2.1.0"
 sayaka = { path = "../sayaka" }
 kamura-core = { path = "../kamura-core" }
 kamura-operator = { path = "../kamura-operator" }
 kamura-runner = { path = "../kamura-runner" }
 kamura-integrator = { path = "../kamura-integrator" }
+kamura-controller = { path = "../kamura-controller" }
 serde = { version = "1.0.209", features = ["derive"] }
 tokio = { version = "1.40.0", features = ["full"] }
 tower-http = { version = "0.5.2", features = ["set-header", "cors"] }
-chrono = "0.4.38"
 serde_json = "1.0.127"
 md5 = "0.7.0"
