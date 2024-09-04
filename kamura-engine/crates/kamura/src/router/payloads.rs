@@ -32,15 +32,20 @@ pub struct ArchList {
 #[derive(Serialize)]
 pub struct RawArch {
     pub success: bool,
-    pub units: Units,
     pub topology: Topology,
+    pub message: String,
+}
+
+#[derive(Serialize)]
+pub struct Unit {
+    pub success: bool,
+    pub units: Units,
     pub message: String,
 }
 
 #[derive(Serialize)]
 pub struct Arch {
     pub success: bool,
-    pub units: Units,
     pub topology: Topology,
     pub elements: Vec<Value>,
     pub message: String,
@@ -80,7 +85,6 @@ pub struct GetArchPayload {
 #[derive(Deserialize, Debug)]
 pub struct SaveArchPayload {
     pub target: String,
-    pub units: Units,
     pub topology: Topology,
     pub elements: Vec<Value>,
 }

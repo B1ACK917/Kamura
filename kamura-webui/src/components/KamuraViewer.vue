@@ -2,7 +2,7 @@
   <el-container class="kamura-viewer" style="height: 80vh">
     <el-aside width="200px">
       <el-scrollbar>
-        <el-menu :default-openeds="['1','2']">
+        <el-menu :default-openeds="['1','2','3']">
           <el-sub-menu index="1">
             <template #title>
               Arches
@@ -102,6 +102,7 @@ export default {
   },
   mounted() {
     this.fetchArchesList();
+    this.fetchUnitsList();
   },
   methods: {
     async fetchArchesList() {
@@ -117,6 +118,26 @@ export default {
         console.error("Error fetching arches:", error);
       }
     },
+    async fetchUnitsList() {
+      try {
+        const response = await axios.get(`${kamura_engine_url}/getUnits`);
+        const data = response.data;
+        if (data.success) {
+          const orderedUnits = Object.keys(data.units).sort().reduce(
+              (obj, key) => {
+                obj[key] = data.units[key];
+                return obj;
+              },
+              {}
+          );
+          this.units = orderedUnits;
+        } else {
+          console.error("Failed to fetch units:", data.message);
+        }
+      } catch (error) {
+        console.error("Error fetching units:", error);
+      }
+    },
     async fetchAndLoadCy(target) {
       this.selectedArch = target;
       await this.fetchArch(target, false);
@@ -130,7 +151,6 @@ export default {
         });
         const data = response.data;
         this.cyElements = data.elements;
-        this.units = data.units;
         this.topology = data.topology;
       } catch (error) {
         console.error("Error fetching arch:", error);
@@ -140,7 +160,6 @@ export default {
       try {
         await axios.post(`${kamura_engine_url}/saveArchElements`, {
           target: this.selectedArch,
-          units: this.units,
           topology: this.topology,
           elements: this.cyElements
         });

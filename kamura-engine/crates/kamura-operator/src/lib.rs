@@ -1,7 +1,7 @@
 mod utils;
 
 use crate::utils::convert_to_cy_elements;
-use kamura_core::consts::OPERATOR_ARCH_LAYOUTS_SET_NAME;
+use kamura_core::consts::{OPERATOR_ARCH_DIR, OPERATOR_ARCH_LAYOUTS_SET_NAME};
 use redis::{Commands, Connection, RedisResult};
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};
@@ -61,7 +61,7 @@ impl Operator {
 
     pub fn list_arches(&self) -> Result<Vec<String>, Box<dyn Error>> {
         debug_fn!();
-        let arch_path = self.perseus.join("arch_temp");
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR);
         if !arch_path.exists() || !arch_path.is_dir() {
             return Err(format!("The path {:?} does not exist or is not a directory", arch_path).into());
         }
@@ -81,9 +81,20 @@ impl Operator {
         Ok(arches)
     }
 
-    pub fn read_arch(&self, target_arch: &String) -> Result<(Units, Topology), Box<dyn Error>> {
+    pub fn read_units(&self) -> Result<Units, Box<dyn Error>> {
         debug_fn!();
-        let arch_path = self.perseus.join("arch_temp").join(target_arch);
+        let units_path = self.perseus.join(OPERATOR_ARCH_DIR).join("units.json");
+        let mut file = fs::File::open(&units_path)?;
+        let mut content = String::new();
+        file.read_to_string(&mut content)?;
+        let units: Units = serde_json::from_str(&content)?;
+
+        Ok(units)
+    }
+
+    pub fn read_arch(&self, target_arch: &String) -> Result<Topology, Box<dyn Error>> {
+        debug_fn!();
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(target_arch);
         if !arch_path.exists() || !arch_path.is_dir() {
             return Err(format!("The path {:?} does not exist or is not a directory", arch_path).into());
         }
@@ -93,19 +104,13 @@ impl Operator {
         file.read_to_string(&mut content)?;
         let topology: Topology = serde_json::from_str(&content)?;
 
-
-        let units_path = arch_path.join("units.json");
-        file = fs::File::open(&units_path)?;
-        content.clear();
-        file.read_to_string(&mut content)?;
-        let units: Units = serde_json::from_str(&content)?;
-
-        Ok((units, topology))
+        Ok(topology)
     }
 
-    pub fn parse_arch(&self, target_arch: String, reset_elements: bool) -> Result<(Units, Topology, Vec<Value>), Box<dyn Error>> {
+    pub fn parse_arch(&self, target_arch: String, reset_elements: bool) -> Result<(Topology, Vec<Value>), Box<dyn Error>> {
         debug_fn!();
-        let (units, topology) = self.read_arch(&target_arch)?;
+        let topology = self.read_arch(&target_arch)?;
+        let units = self.read_units()?;
         let elements;
         if reset_elements {
             elements = convert_to_cy_elements(&units, &topology)?;
@@ -117,19 +122,15 @@ impl Operator {
                 elements = serde_json::from_str(&fetched.unwrap()).unwrap();
             }
         }
-        Ok((units, topology, elements))
+        Ok((topology, elements))
     }
 
-    pub fn save_arch(&self, arch_name: String, units: Units, topology: Topology, elements: Vec<Value>) -> Result<(), Box<dyn Error>> {
+    pub fn save_arch(&self, arch_name: String, topology: Topology, elements: Vec<Value>) -> Result<(), Box<dyn Error>> {
         debug_fn!();
         let serialized_data = serde_json::to_string(&elements).unwrap();
 
-        let arch_path = self.perseus.join("arch_temp").join(&arch_name);
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(&arch_name);
         fs::create_dir_all(&arch_path)?;
-
-        let units_path = arch_path.join("units.json");
-        let units_file = File::create(units_path)?;
-        serde_json::to_writer_pretty(units_file, &units)?;
 
         let topology_path = arch_path.join("topology.json");
         let topology_file = File::create(topology_path)?;
