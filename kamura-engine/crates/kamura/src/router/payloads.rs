@@ -1,5 +1,6 @@
 use kamura_operator::{Topology, Units};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
 // OUT PAYLOADS
 #[derive(Serialize, Debug)]
@@ -29,10 +30,17 @@ pub struct ArchList {
 }
 
 #[derive(Serialize)]
-pub struct Arch {
+pub struct RawArch {
     pub success: bool,
     pub units: Units,
     pub topology: Topology,
+    pub message: String,
+}
+
+#[derive(Serialize)]
+pub struct Arch {
+    pub success: bool,
+    pub elements: Vec<Value>,
     pub message: String,
 }
 

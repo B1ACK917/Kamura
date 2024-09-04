@@ -1,6 +1,10 @@
+mod utils;
+
+use crate::utils::convert_to_cy_elements;
 use redis::Connection;
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
@@ -11,7 +15,7 @@ use std::sync::{Arc, Mutex};
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Topology {
     pub instances: HashMap<String, Vec<String>>,
-    pub binding: HashMap<String, String>,
+    pub binding: Vec<HashMap<String, String>>,
 }
 
 impl Topology {
@@ -25,8 +29,8 @@ impl Topology {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct BasicPorts {
-    pub out_port: Vec<String>,
-    pub in_port: Vec<String>,
+    pub out_ports: Vec<String>,
+    pub in_ports: Vec<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -94,6 +98,12 @@ impl Operator {
         let units: Units = serde_json::from_str(&content)?;
 
         Ok((units, topology))
+    }
+
+    pub fn parse_arch(&self, target_arch: String) -> Result<Vec<Value>, Box<dyn Error>> {
+        let (units, topology) = self.read_arch(target_arch)?;
+        let elements = convert_to_cy_elements(&units, &topology)?;
+        Ok(elements)
     }
 
     pub fn flush_all(&mut self) -> Result<(), Box<dyn Error>> {

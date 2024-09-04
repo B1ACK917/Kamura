@@ -1,5 +1,5 @@
 use crate::router::auth;
-use crate::router::payloads::{Arch, ArchList, AuthorizedPayload, CommonResponse, GetArchPayload};
+use crate::router::payloads::{Arch, ArchList, AuthorizedPayload, CommonResponse, GetArchPayload, RawArch};
 use axum::extract::State;
 use axum::Json;
 use kamura_operator::{Operator, Topology, Units};
@@ -32,14 +32,26 @@ pub async fn list_arches(state: State<Operator>) -> Json<ArchList> {
     }
 }
 
-pub async fn get_raw_arch(state: State<Operator>, Json(payload): Json<GetArchPayload>) -> Json<Arch> {
+pub async fn get_raw_arch(state: State<Operator>, Json(payload): Json<GetArchPayload>) -> Json<RawArch> {
     debug_fn!();
     match state.read_arch(payload.target) {
         Ok((units, topology)) => {
-            Json(Arch { success: true, units, topology, message: "".to_string() })
+            Json(RawArch { success: true, units, topology, message: "".to_string() })
         }
         Err(err) => {
-            Json(Arch { success: false, units: Units::new(), topology: Topology::new(), message: err.to_string() })
+            Json(RawArch { success: false, units: Units::new(), topology: Topology::new(), message: err.to_string() })
+        }
+    }
+}
+
+pub async fn get_arch(state: State<Operator>, Json(payload): Json<GetArchPayload>) -> Json<Arch> {
+    debug_fn!();
+    match state.parse_arch(payload.target) {
+        Ok(elements) => {
+            Json(Arch { success: true, elements, message: "".to_string() })
+        }
+        Err(err) => {
+            Json(Arch { success: false, elements: Vec::new(), message: err.to_string() })
         }
     }
 }
