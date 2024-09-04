@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local};
-use kamura_core::consts::{INTEGRATOR_PERSEUS_REBUILD, INTEGRATOR_PERSEUS_UPDATE, INTEGRATOR_SPIKE_REBUILD, INTEGRATOR_TASKS_SET_NAME};
+use kamura_core::consts::{INTEGRATOR_MAKE_THREAD, INTEGRATOR_PERSEUS_REBUILD, INTEGRATOR_PERSEUS_UPDATE, INTEGRATOR_SPIKE_REBUILD, INTEGRATOR_TASKS_SET_NAME};
 use redis::Commands;
 use sayaka::debug_fn;
 use std::error::Error;
@@ -132,7 +132,7 @@ impl Integrator {
         // Step 4: Run make in the build directory
         let make_status = Command::new("sh")
             .arg("-c")
-            .arg("make -j10 >/dev/null 2>&1")
+            .arg(format!("make -j{INTEGRATOR_MAKE_THREAD} >/dev/null 2>&1"))
             .current_dir(perseus_path.join("build"))
             .spawn()
             .expect("Command failed to start")
