@@ -86,10 +86,10 @@ export function parseBindings(bindingTopology) {
   const modules = classify(bindingTopology);
   const elements = drawModules(modules, [200, 100], [300, 300]);
 
-  for (let i = 0; i < bindingTopology.length - 1; i += 2) {
-    const [sourceModule, sourcePortName] = bindingTopology[i];
-    const [targetModule, targetPortName] = bindingTopology[i + 1];
-    elements.push({ data: { id: `${sourceModule}-${sourcePortName}-${targetModule}-${targetPortName}`, source: `${sourceModule}-${sourcePortName}`, target: `${targetModule}-${targetPortName}` } });
-  }
+  // for (let i = 0; i < bindingTopology.length - 1; i += 2) {
+  //   const [sourceModule, sourcePortName] = bindingTopology[i];
+  //   const [targetModule, targetPortName] = bindingTopology[i + 1];
+  //   elements.push({ data: { id: `${sourceModule}-${sourcePortName}-${targetModule}-${targetPortName}`, source: `${sourceModule}-${sourcePortName}`, target: `${targetModule}-${targetPortName}` } });
+  // }
   return elements;
 }

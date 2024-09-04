@@ -12,7 +12,7 @@
                   v-for="(arch, index) in this.arches"
                   :key="index"
                   :index="`1-${index + 1}`"
-                  @click="fetchRawArch(arch)"
+                  @click="fetchAndLoadCy(arch)"
               >
                 {{ arch }}
               </el-menu-item>
@@ -31,6 +31,18 @@
               <el-menu-item index="2-5">Redo</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
+
+          <el-sub-menu index="3">
+            <template #title>
+              Options
+            </template>
+            <el-menu-item-group>
+              <el-menu-item index="3-1" @click="">New</el-menu-item>
+              <el-menu-item index="3-2" @click="">Save</el-menu-item>
+              <el-menu-item index="3-3" @click="">Reset</el-menu-item>
+            </el-menu-item-group>
+          </el-sub-menu>
+
         </el-menu>
       </el-scrollbar>
     </el-aside>
@@ -45,7 +57,6 @@
 
 <script>
 import cytoscape from 'cytoscape';
-import {parseBindings} from '@/utils/funcs';
 import {options} from '@/utils/layout';
 import {kamura_engine_url} from "@/utils/consts";
 import axios from "axios";
@@ -62,10 +73,10 @@ export default {
     };
   },
   mounted() {
-    this.fetchArches();
+    this.fetchArchesList();
   },
   methods: {
-    async fetchArches() {
+    async fetchArchesList() {
       try {
         const response = await axios.get(`${kamura_engine_url}/listArches`);
         const data = response.data;
@@ -78,20 +89,33 @@ export default {
         console.error("Error fetching arches:", error);
       }
     },
-    async fetchRawArch(target) {
+    async fetchAndLoadCy(target) {
+      // const response = await fetch('/simple.yaml');
+      // const yamlText = await response.text();
+      // const data = parseYaml(yamlText);
+      // if (data) {
+      //   const bindingTopology = data['top.extension.topo_extensions']['binding_topology'];
+      //   const t = parseBindings(bindingTopology);
+      //   this.cyElements = t;
+      //   console.log(t);
+      //   this.initCytoscape();
+      // }
+
+      await this.fetchArch(target);
+      this.initCytoscape()
+    },
+    async fetchArch(target) {
       try {
-        const response = await axios.post(`${kamura_engine_url}/getRawArch`, {
+        const response = await axios.post(`${kamura_engine_url}/getArchElements`, {
           target
         });
         const data = response.data;
-        console.log(data);
+        this.cyElements = data.elements;
       } catch (error) {
         console.error("Error fetching arches:", error);
       }
     },
-    initCytoscape(bindingTopology) {
-      this.cyElements = parseBindings(bindingTopology);
-
+    initCytoscape() {
       this.cy = this.createCyto();
 
       this.setMode('view');
@@ -135,6 +159,7 @@ export default {
       });
     },
     setMode(mode) {
+      console.log(this.cyElements);
       switch (mode) {
         case 'remove':
           this.cy.$('node').on('tap', (e) => {
@@ -152,7 +177,6 @@ export default {
     restore() {
       let top = this.removedNodes.pop();
       if (top) {
-        // console.log(top);
         top.restore();
       }
     },
