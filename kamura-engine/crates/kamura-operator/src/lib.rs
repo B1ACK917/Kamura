@@ -8,6 +8,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 use std::error::Error;
 use std::fs;
+use std::fs::File;
 use std::io::Read;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -101,7 +102,8 @@ impl Operator {
         Ok((units, topology))
     }
 
-    pub fn parse_arch(&self, target_arch: String, reset_elements: bool) -> Result<Vec<Value>, Box<dyn Error>> {
+    pub fn parse_arch(&self, target_arch: String, reset_elements: bool) -> Result<(Units, Topology, Vec<Value>), Box<dyn Error>> {
+        debug_fn!();
         let (units, topology) = self.read_arch(&target_arch)?;
         let elements;
         if reset_elements {
@@ -114,13 +116,34 @@ impl Operator {
                 elements = serde_json::from_str(&fetched.unwrap()).unwrap();
             }
         }
-        Ok(elements)
+        Ok((units, topology, elements))
     }
 
-    pub fn save_elements(&self, arch_name: String, elements: Vec<Value>) -> RedisResult<()> {
+    pub fn save_arch(&self, arch_name: String, units: Units, topology: Topology, elements: Vec<Value>) -> Result<(), Box<dyn Error>> {
+        debug_fn!();
         let serialized_data = serde_json::to_string(&elements).unwrap();
-        let _: () = self.con.lock().unwrap().hset("KAMURA_OP_ELEMENTS", format!("{arch_name}"), serialized_data)?;
 
+        let arch_path = self.perseus.join("arch_temp").join(&arch_name);
+        fs::create_dir_all(&arch_path)?;
+
+        let units_path = arch_path.join("units.json");
+        let units_file = File::create(units_path)?;
+        serde_json::to_writer_pretty(units_file, &units)?;
+
+        let topology_path = arch_path.join("topology.json");
+        let topology_file = File::create(topology_path)?;
+        serde_json::to_writer_pretty(topology_file, &topology)?;
+
+        let _: () = self.con.lock().unwrap().hset("KAMURA_OP_ELEMENTS", format!("{arch_name}"), serialized_data)?;
+        Ok(())
+    }
+
+    pub fn flush_arch_elements(&mut self) -> Result<(), Box<dyn Error>> {
+        debug_fn!();
+        let arches: Vec<String> = self.con.lock().unwrap().hkeys("KAMURA_OP_ELEMENTS")?;
+        for arch in arches {
+            self.con.lock().unwrap().hdel("KAMURA_OP_ELEMENTS", format!("{arch}"))?;
+        }
         Ok(())
     }
 

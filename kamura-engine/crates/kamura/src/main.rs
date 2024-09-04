@@ -1,7 +1,7 @@
 mod router;
 mod utils;
 
-use crate::router::{add_task, flush_all, get_all_tasks, get_arch, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_raw_arch, get_spike_rebuild_status, get_task_log, get_task_status, get_valid_workloads, list_arches, rebuild_perseus, rebuild_spike, remove_all_tasks, root, save_arch, update_perseus};
+use crate::router::{add_task, flush_all, flush_arch_elements, get_all_tasks, get_arch, get_build_date, get_perseus_date, get_perseus_path, get_perseus_rebuild_status, get_perseus_status, get_perseus_update_status, get_perseus_version, get_raw_arch, get_spike_rebuild_status, get_task_log, get_task_status, get_valid_workloads, list_arches, rebuild_perseus, rebuild_spike, remove_all_tasks, root, save_arch, update_perseus};
 use crate::utils::cli;
 use axum::routing::{get, post};
 use axum::Router;
@@ -56,6 +56,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/getRawArch", post(get_raw_arch))
         .route("/getArchElements", post(get_arch))
         .route("/saveArchElements", post(save_arch))
+        .route("/flushArchElements", post(flush_arch_elements))
         .route("/flushAll", post(flush_all))
         .with_state(kamura_operator)
         .layer(cors);

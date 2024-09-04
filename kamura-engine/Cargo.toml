@@ -1,7 +1,7 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/kamura", "crates/kamura-core",
+    "crates/kamura", "crates/kamura-controller", "crates/kamura-core",
     "crates/kamura-integrator", "crates/kamura-operator",
     "crates/kamura-runner",
     "crates/sayaka"

@@ -26,7 +26,6 @@
             <el-menu-item-group>
               <el-menu-item index="2-1" @click="setMode('view')">View</el-menu-item>
               <el-menu-item index="2-2" @click="setMode('remove')">Remove</el-menu-item>
-              <el-menu-item index="2-3">Add</el-menu-item>
               <el-menu-item index="2-4" @click="restore">Undo</el-menu-item>
               <el-menu-item index="2-5">Redo</el-menu-item>
             </el-menu-item-group>
@@ -51,6 +50,30 @@
       <div ref="cyRef" style="width: 80%; height: 75vh; text-align: left" class="cyRef"></div>
     </el-main>
 
+    <el-aside width="200px">
+      <el-scrollbar>
+        <el-menu :default-openeds="['1']">
+
+          <el-sub-menu index="1">
+            <template #title>
+              Add Unit
+            </template>
+            <el-menu-item-group>
+              <el-menu-item
+                  v-for="(_, unit, index) in this.units"
+                  :key="index"
+                  :index="`1-${index + 1}`"
+                  @click="addNewUnit(unit)"
+              >
+                {{ unit }}
+              </el-menu-item>
+            </el-menu-item-group>
+          </el-sub-menu>
+
+        </el-menu>
+      </el-scrollbar>
+    </el-aside>
+
   </el-container>
 </template>
 
@@ -60,6 +83,8 @@ import cytoscape from 'cytoscape';
 import {options} from '@/utils/layout';
 import {kamura_engine_url} from "@/utils/consts";
 import axios from "axios";
+import {addAUnit} from "@/utils/funcs";
+import {ElMessage, ElMessageBox} from 'element-plus'
 
 
 export default {
@@ -68,6 +93,8 @@ export default {
     return {
       arches: [],
       selectedArch: null,
+      topology: null,
+      units: null,
       cy: null,
       cyElements: [],
       removedNodes: [],
@@ -103,6 +130,8 @@ export default {
         });
         const data = response.data;
         this.cyElements = data.elements;
+        this.units = data.units;
+        this.topology = data.topology;
       } catch (error) {
         console.error("Error fetching arch:", error);
       }
@@ -111,8 +140,14 @@ export default {
       try {
         await axios.post(`${kamura_engine_url}/saveArchElements`, {
           target: this.selectedArch,
+          units: this.units,
+          topology: this.topology,
           elements: this.cyElements
         });
+        ElMessage({
+          type: 'success',
+          message: `Saved ${this.selectedArch} to Kamura-Engine`,
+        })
       } catch (error) {
         console.error("Error saving arch:", error);
       }
@@ -123,7 +158,6 @@ export default {
     },
     initCytoscape() {
       this.cy = this.createCyto();
-
       this.setMode('view');
     },
     createCyto() {
@@ -186,6 +220,27 @@ export default {
         top.restore();
       }
     },
+    addNewUnit(unitType) {
+      ElMessageBox.prompt('Add a new unit instance', 'Tip', {
+        confirmButtonText: 'Add',
+        cancelButtonText: 'Cancel',
+        inputValue: unitType
+      })
+          .then(({value}) => {
+            ElMessage({
+              type: 'success',
+              message: `Add: ${value} as ${unitType}`,
+            })
+            this.cyElements = addAUnit(value, unitType, this.units, this.topology, this.cyElements);
+            this.initCytoscape();
+          })
+          .catch(() => {
+            ElMessage({
+              type: 'info',
+              message: 'Add canceled',
+            })
+          });
+    }
   }
 }
 </script>
