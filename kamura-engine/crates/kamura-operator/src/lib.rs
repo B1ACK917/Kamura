@@ -1,7 +1,7 @@
 mod utils;
 
 use crate::utils::convert_to_cy_elements;
-use redis::Connection;
+use redis::{Commands, Connection, RedisResult};
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -75,10 +75,11 @@ impl Operator {
                 }
             }
         }
+        arches.sort();
         Ok(arches)
     }
 
-    pub fn read_arch(&self, target_arch: String) -> Result<(Units, Topology), Box<dyn Error>> {
+    pub fn read_arch(&self, target_arch: &String) -> Result<(Units, Topology), Box<dyn Error>> {
         debug_fn!();
         let arch_path = self.perseus.join("arch_temp").join(target_arch);
         if !arch_path.exists() || !arch_path.is_dir() {
@@ -100,10 +101,27 @@ impl Operator {
         Ok((units, topology))
     }
 
-    pub fn parse_arch(&self, target_arch: String) -> Result<Vec<Value>, Box<dyn Error>> {
-        let (units, topology) = self.read_arch(target_arch)?;
-        let elements = convert_to_cy_elements(&units, &topology)?;
+    pub fn parse_arch(&self, target_arch: String, reset_elements: bool) -> Result<Vec<Value>, Box<dyn Error>> {
+        let (units, topology) = self.read_arch(&target_arch)?;
+        let elements;
+        if reset_elements {
+            elements = convert_to_cy_elements(&units, &topology)?;
+        } else {
+            let fetched: RedisResult<String> = self.con.lock().unwrap().hget("KAMURA_OP_ELEMENTS", format!("{target_arch}"));
+            if fetched.is_err() {
+                elements = convert_to_cy_elements(&units, &topology)?;
+            } else {
+                elements = serde_json::from_str(&fetched.unwrap()).unwrap();
+            }
+        }
         Ok(elements)
+    }
+
+    pub fn save_elements(&self, arch_name: String, elements: Vec<Value>) -> RedisResult<()> {
+        let serialized_data = serde_json::to_string(&elements).unwrap();
+        let _: () = self.con.lock().unwrap().hset("KAMURA_OP_ELEMENTS", format!("{arch_name}"), serialized_data)?;
+
+        Ok(())
     }
 
     pub fn flush_all(&mut self) -> Result<(), Box<dyn Error>> {

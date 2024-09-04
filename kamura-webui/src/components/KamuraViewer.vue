@@ -38,8 +38,8 @@
             </template>
             <el-menu-item-group>
               <el-menu-item index="3-1" @click="">New</el-menu-item>
-              <el-menu-item index="3-2" @click="">Save</el-menu-item>
-              <el-menu-item index="3-3" @click="">Reset</el-menu-item>
+              <el-menu-item index="3-2" @click="saveArch">Save</el-menu-item>
+              <el-menu-item index="3-3" @click="resetArch">Reset</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
 
@@ -67,6 +67,7 @@ export default {
   data() {
     return {
       arches: [],
+      selectedArch: null,
       cy: null,
       cyElements: [],
       removedNodes: [],
@@ -90,30 +91,35 @@ export default {
       }
     },
     async fetchAndLoadCy(target) {
-      // const response = await fetch('/simple.yaml');
-      // const yamlText = await response.text();
-      // const data = parseYaml(yamlText);
-      // if (data) {
-      //   const bindingTopology = data['top.extension.topo_extensions']['binding_topology'];
-      //   const t = parseBindings(bindingTopology);
-      //   this.cyElements = t;
-      //   console.log(t);
-      //   this.initCytoscape();
-      // }
-
-      await this.fetchArch(target);
+      this.selectedArch = target;
+      await this.fetchArch(target, false);
       this.initCytoscape()
     },
-    async fetchArch(target) {
+    async fetchArch(target, reset) {
       try {
         const response = await axios.post(`${kamura_engine_url}/getArchElements`, {
-          target
+          target,
+          reset
         });
         const data = response.data;
         this.cyElements = data.elements;
       } catch (error) {
-        console.error("Error fetching arches:", error);
+        console.error("Error fetching arch:", error);
       }
+    },
+    async saveArch() {
+      try {
+        await axios.post(`${kamura_engine_url}/saveArchElements`, {
+          target: this.selectedArch,
+          elements: this.cyElements
+        });
+      } catch (error) {
+        console.error("Error saving arch:", error);
+      }
+    },
+    async resetArch() {
+      await this.fetchArch(this.selectedArch, true);
+      this.initCytoscape();
     },
     initCytoscape() {
       this.cy = this.createCyto();

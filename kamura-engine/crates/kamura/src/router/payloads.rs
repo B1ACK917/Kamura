@@ -71,4 +71,11 @@ pub struct AuthorizedPayload {
 #[derive(Deserialize, Debug)]
 pub struct GetArchPayload {
     pub target: String,
+    pub reset: bool,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct SaveArchPayload {
+    pub target: String,
+    pub elements: Vec<Value>,
 }
