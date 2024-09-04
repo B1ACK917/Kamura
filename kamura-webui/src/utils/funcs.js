@@ -48,3 +48,39 @@ export function addAUnit(unitName, unitType, units, topology, elements) {
     elements = addNewModule(unitName, unitType, units, elements, [400, 100]);
     return elements;
 }
+
+export function updateBinding(bindingStack, nodeID, topology, elements, popBinding = true) {
+    const newEdge = [];
+    if (bindingStack) {
+        let source = null, target = null;
+        if (bindingStack.includes("out")) {
+            [source, target] = [bindingStack, nodeID];
+        } else {
+            [source, target] = [nodeID, bindingStack];
+        }
+
+        topology["binding"].push({
+            "source": source,
+            "target": target
+        });
+        newEdge.push({
+            data: {
+                id: `${source}-${target}`,
+                source: `${source}`,
+                target: `${target}`
+            }
+        });
+        elements.push({
+            data: {
+                id: `${source}-${target}`,
+                source: `${source}`,
+                target: `${target}`
+            }
+        });
+        if (popBinding)
+            bindingStack = null;
+    } else {
+        bindingStack = nodeID;
+    }
+    return [bindingStack, newEdge, topology, elements];
+}

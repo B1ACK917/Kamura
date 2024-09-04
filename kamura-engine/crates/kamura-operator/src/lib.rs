@@ -15,9 +15,15 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct Edge {
+    pub source: String,
+    pub target: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct Topology {
     pub instances: HashMap<String, Vec<String>>,
-    pub binding: Vec<HashMap<String, String>>,
+    pub binding: Vec<Edge>,
 }
 
 impl Topology {

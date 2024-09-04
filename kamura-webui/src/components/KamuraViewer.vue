@@ -2,7 +2,7 @@
   <el-container class="kamura-viewer" style="height: 80vh">
     <el-aside width="200px">
       <el-scrollbar>
-        <el-menu :default-openeds="['1','2','3']">
+        <el-menu :default-openeds="['1','2','4']">
           <el-sub-menu index="1">
             <template #title>
               Arches
@@ -21,25 +21,35 @@
 
           <el-sub-menu index="2">
             <template #title>
-              Tools
+              Mode
             </template>
             <el-menu-item-group>
-              <el-menu-item index="2-1" @click="">View</el-menu-item>
-              <el-menu-item index="2-2" @click="">Remove</el-menu-item>
-              <el-menu-item index="2-4" @click="">Undo</el-menu-item>
-              <el-menu-item index="2-5">Redo</el-menu-item>
+              <el-menu-item index="2-1" @click="this.mode='view';this.bindingStack=null">View Mode</el-menu-item>
+              <el-menu-item index="2-2" @click="this.mode='bind';this.bindingStack=null">Bind Mode</el-menu-item>
+              <el-menu-item index="2-3" @click="this.mode='bindFrom';this.bindingStack=null">Bind-From Mode</el-menu-item>
+              <el-menu-item index="2-4" @click="this.mode='remove';this.bindingStack=null">Remove Mode</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
 
           <el-sub-menu index="3">
             <template #title>
+              Tools
+            </template>
+            <el-menu-item-group>
+              <el-menu-item index="3-1">Undo</el-menu-item>
+              <el-menu-item index="3-2">Redo</el-menu-item>
+            </el-menu-item-group>
+          </el-sub-menu>
+
+          <el-sub-menu index="4">
+            <template #title>
               Options
             </template>
             <el-menu-item-group>
-              <el-menu-item index="3-1" @click="newArch">New</el-menu-item>
-              <el-menu-item index="3-2" @click="saveArch">Save</el-menu-item>
-              <el-menu-item index="3-3" @click="resetArch">Reset</el-menu-item>
-              <el-menu-item index="3-4" @click="removeArch">Delete</el-menu-item>
+              <el-menu-item index="4-1" @click="newArch">New</el-menu-item>
+              <el-menu-item index="4-2" @click="saveArch">Save</el-menu-item>
+              <el-menu-item index="4-3" @click="resetArch">Reset</el-menu-item>
+              <el-menu-item index="4-4" @click="removeArch">Delete</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
 
@@ -84,7 +94,7 @@ import cytoscape from 'cytoscape';
 import {options} from '@/utils/layout';
 import {kamura_engine_url, topology_template} from "@/utils/consts";
 import axios from "axios";
-import {addAUnit} from "@/utils/funcs";
+import {addAUnit, updateBinding} from "@/utils/funcs";
 import {ElMessage, ElMessageBox} from 'element-plus'
 
 
@@ -99,6 +109,8 @@ export default {
       cy: null,
       cyElements: [],
       removedNodes: [],
+      mode: "view",
+      bindingStack: null
     };
   },
   mounted() {
@@ -212,6 +224,8 @@ export default {
           message: `Remove ${this.selectedArch} from Kamura-Engine`,
         })
         this.selectedArch = null;
+        this.cy.destroy();
+        this.cy = null;
       } catch (error) {
         console.error("Error: ", error);
       }
@@ -222,9 +236,10 @@ export default {
       this.initCytoscape();
     },
     initCytoscape() {
-      this.cy = this.createCyto();
+      this.cy = this.createCytoscape();
+      this.setListener();
     },
-    createCyto() {
+    createCytoscape() {
       return cytoscape({
         container: this.$refs.cyRef,
         elements: this.cyElements,
@@ -279,6 +294,50 @@ export default {
           type: 'info',
           message: 'Add canceled',
         })
+      });
+    },
+    setListener() {
+      const self = this;
+      this.cy.on('tap', 'node', function (evt) {
+        const node = evt.target;
+        switch (self.mode) {
+          case 'remove':
+            console.log(`${self.mode} not implemented`);
+            break;
+          case 'bind':
+            if (node.id().includes(".")) {
+              console.log(`Binding mode: ${node.id()}`);
+              let newEdge;
+              [self.bindingStack, newEdge, self.topology, self.cyElements] = updateBinding(self.bindingStack, node.id(), self.topology, self.cyElements);
+              self.cy.add(newEdge);
+            }
+            break;
+          case 'bindFrom':
+            if (node.id().includes(".")) {
+              console.log(`Binding mode: ${node.id()}`);
+              let newEdge;
+              [self.bindingStack, newEdge, self.topology, self.cyElements] = updateBinding(self.bindingStack, node.id(), self.topology, self.cyElements, false);
+              self.cy.add(newEdge);
+            }
+            break;
+          default:
+            break;
+        }
+      });
+      this.cy.on('tap', 'edge', function (evt) {
+        const edge = evt.target;
+        const edgeID=edge.id();
+        switch (self.mode) {
+          case 'remove':
+            console.log(`Remove mode: ${edgeID}`);
+            self.cy.remove(edge);
+            self.cyElements = self.cyElements.filter(item => item.data.id !== edgeID);
+            const [source, target] = edgeID.split('-');
+            self.topology.binding = self.topology.binding.filter(item => !(item.source === source && item.target === target));
+            break;
+          default:
+            break;
+        }
       });
     }
   }
