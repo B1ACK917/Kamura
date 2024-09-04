@@ -1,5 +1,8 @@
 <template>
   <KamuraMain/>
+  <footer style="position: absolute; bottom: 0; width: 100%">
+    Powered by Kamura-Engine
+  </footer>
 </template>
 
 <script>

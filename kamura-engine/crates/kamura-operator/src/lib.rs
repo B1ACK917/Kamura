@@ -139,4 +139,13 @@ impl Operator {
         let _: () = self.con.lock().unwrap().hset(OPERATOR_ARCH_LAYOUTS_SET_NAME, format!("{arch_name}"), serialized_data)?;
         Ok(())
     }
+
+    pub fn remove_arch(&self, arch_name: String) -> Result<(), Box<dyn Error>> {
+        debug_fn!();
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(&arch_name);
+        fs::remove_dir_all(&arch_path)?;
+
+        let _: () = self.con.lock().unwrap().hdel(OPERATOR_ARCH_LAYOUTS_SET_NAME, format!("{arch_name}"))?;
+        Ok(())
+    }
 }

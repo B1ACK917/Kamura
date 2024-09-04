@@ -1,4 +1,4 @@
-use crate::router::payloads::{Arch, ArchList, CommonResponse, GetArchPayload, RawArch, SaveArchPayload, Unit};
+use crate::router::payloads::{Arch, ArchList, CommonResponse, GetArchPayload, RawArch, SaveArchPayload, Unit, UniversalTargetPayload};
 use axum::extract::State;
 use axum::Json;
 use kamura_operator::{Operator, Topology, Units};
@@ -58,6 +58,18 @@ pub async fn save_arch(state: State<Operator>, Json(payload): Json<SaveArchPaylo
     match state.save_arch(payload.target, payload.topology, payload.elements) {
         Ok(_) => {
             Json(CommonResponse { success: true, message: "".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}
+
+pub async fn remove_arch(state: State<Operator>, Json(payload): Json<UniversalTargetPayload>) -> Json<CommonResponse> {
+    debug_fn!(payload);
+    match state.remove_arch(payload.target) {
+        Ok(_) => {
+            Json(CommonResponse { success: true, message: "Removed".to_string() })
         }
         Err(err) => {
             Json(CommonResponse { success: false, message: err.to_string() })

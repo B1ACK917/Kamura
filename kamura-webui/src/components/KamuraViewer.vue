@@ -24,9 +24,9 @@
               Tools
             </template>
             <el-menu-item-group>
-              <el-menu-item index="2-1" @click="setMode('view')">View</el-menu-item>
-              <el-menu-item index="2-2" @click="setMode('remove')">Remove</el-menu-item>
-              <el-menu-item index="2-4" @click="restore">Undo</el-menu-item>
+              <el-menu-item index="2-1" @click="">View</el-menu-item>
+              <el-menu-item index="2-2" @click="">Remove</el-menu-item>
+              <el-menu-item index="2-4" @click="">Undo</el-menu-item>
               <el-menu-item index="2-5">Redo</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
@@ -36,9 +36,10 @@
               Options
             </template>
             <el-menu-item-group>
-              <el-menu-item index="3-1" @click="">New</el-menu-item>
+              <el-menu-item index="3-1" @click="newArch">New</el-menu-item>
               <el-menu-item index="3-2" @click="saveArch">Save</el-menu-item>
               <el-menu-item index="3-3" @click="resetArch">Reset</el-menu-item>
+              <el-menu-item index="3-4" @click="removeArch">Delete</el-menu-item>
             </el-menu-item-group>
           </el-sub-menu>
 
@@ -47,7 +48,7 @@
     </el-aside>
 
     <el-main>
-      <div ref="cyRef" style="width: 80%; height: 75vh; text-align: left" class="cyRef"></div>
+      <div ref="cyRef" style="width: 99%; height: 75vh; text-align: left" class="cyRef"></div>
     </el-main>
 
     <el-aside width="200px">
@@ -81,7 +82,7 @@
 <script>
 import cytoscape from 'cytoscape';
 import {options} from '@/utils/layout';
-import {kamura_engine_url} from "@/utils/consts";
+import {kamura_engine_url, topology_template} from "@/utils/consts";
 import axios from "axios";
 import {addAUnit} from "@/utils/funcs";
 import {ElMessage, ElMessageBox} from 'element-plus'
@@ -171,13 +172,57 @@ export default {
         console.error("Error saving arch:", error);
       }
     },
+    async newArch() {
+      ElMessageBox.prompt('Create a new arch', 'Tip', {
+        confirmButtonText: 'Create',
+        cancelButtonText: 'Cancel',
+        inputPlaceholder: 'Arch Name'
+      }).then(async ({value}) => {
+        await axios.post(`${kamura_engine_url}/saveArchElements`, {
+          target: value,
+          topology: topology_template,
+          elements: []
+        });
+        await this.fetchAndLoadCy(value);
+        ElMessage({
+          type: 'success',
+          message: `Successfully created new arch ${value}`,
+        });
+        await this.fetchArchesList();
+      }).catch(() => {
+        ElMessage({
+          type: 'info',
+          message: 'Canceled',
+        })
+      });
+    },
+    async removeArch() {
+      if (!this.selectedArch) {
+        ElMessage({
+          type: 'error',
+          message: 'No selected arch',
+        })
+      }
+      try {
+        await axios.post(`${kamura_engine_url}/removeArch`, {
+          target: this.selectedArch,
+        });
+        ElMessage({
+          type: 'success',
+          message: `Remove ${this.selectedArch} from Kamura-Engine`,
+        })
+        this.selectedArch = null;
+      } catch (error) {
+        console.error("Error: ", error);
+      }
+      await this.fetchArchesList();
+    },
     async resetArch() {
       await this.fetchArch(this.selectedArch, true);
       this.initCytoscape();
     },
     initCytoscape() {
       this.cy = this.createCyto();
-      this.setMode('view');
     },
     createCyto() {
       return cytoscape({
@@ -217,48 +262,24 @@ export default {
         layout: options.preset
       });
     },
-    setMode(mode) {
-      console.log(this.cyElements);
-      switch (mode) {
-        case 'remove':
-          this.cy.$('node').on('tap', (e) => {
-            const ele = e.target;
-            this.removedNodes.push(ele.remove());
-          });
-          break;
-        case 'view':
-          this.cy.$('node').on('tap', (e) => {
-            e
-          });
-          break;
-      }
-    },
-    restore() {
-      let top = this.removedNodes.pop();
-      if (top) {
-        top.restore();
-      }
-    },
     addNewUnit(unitType) {
       ElMessageBox.prompt('Add a new unit instance', 'Tip', {
         confirmButtonText: 'Add',
         cancelButtonText: 'Cancel',
         inputValue: unitType
-      })
-          .then(({value}) => {
-            ElMessage({
-              type: 'success',
-              message: `Add: ${value} as ${unitType}`,
-            })
-            this.cyElements = addAUnit(value, unitType, this.units, this.topology, this.cyElements);
-            this.initCytoscape();
-          })
-          .catch(() => {
-            ElMessage({
-              type: 'info',
-              message: 'Add canceled',
-            })
-          });
+      }).then(({value}) => {
+        ElMessage({
+          type: 'success',
+          message: `Add: ${value} as ${unitType}`,
+        })
+        this.cyElements = addAUnit(value, unitType, this.units, this.topology, this.cyElements);
+        this.initCytoscape();
+      }).catch(() => {
+        ElMessage({
+          type: 'info',
+          message: 'Add canceled',
+        })
+      });
     }
   }
 }

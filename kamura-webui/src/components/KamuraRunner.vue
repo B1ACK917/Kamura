@@ -141,7 +141,7 @@ export default {
     },
     async fetchTaskLog(uuid) {
       try {
-        const response = await axios.post(`${kamura_engine_url}/getTaskLog`, {uuid});
+        const response = await axios.post(`${kamura_engine_url}/getTaskLog`, {target: uuid});
         if (response.data.success) {
           let responseSpan = document.getElementById("log")
           responseSpan.innerHTML = response.data.message

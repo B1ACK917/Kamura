@@ -1,4 +1,4 @@
-use crate::router::payloads::{CommonResponse, GetBuildDatePayload};
+use crate::router::payloads::{CommonResponse, UniversalTargetPayload};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{State, WebSocketUpgrade};
 use axum::response::IntoResponse;
@@ -38,9 +38,9 @@ pub async fn get_perseus_path(state: State<Integrator>) -> Json<CommonResponse> 
     Json(CommonResponse { success: true, message: state.get_perseus_path() })
 }
 
-pub async fn get_build_date(state: State<Integrator>, Json(payload): Json<GetBuildDatePayload>) -> Json<CommonResponse> {
+pub async fn get_build_date(state: State<Integrator>, Json(payload): Json<UniversalTargetPayload>) -> Json<CommonResponse> {
     debug_fn!(payload);
-    match state.get_build_date(payload.module) {
+    match state.get_build_date(payload.target) {
         Ok(date) => {
             Json(CommonResponse { success: true, message: date })
         }

@@ -1,4 +1,4 @@
-use crate::router::payloads::{AddTaskPayload, CommonResponse, GetTaskPayload, Tasks, Workloads};
+use crate::router::payloads::{AddTaskPayload, CommonResponse, Tasks, UniversalTargetPayload, Workloads};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
@@ -38,9 +38,9 @@ pub async fn add_task(mut state: State<Runner>, Json(payload): Json<AddTaskPaylo
     }
 }
 
-pub async fn get_task_log(state: State<Runner>, Json(payload): Json<GetTaskPayload>) -> Json<CommonResponse> {
+pub async fn get_task_log(state: State<Runner>, Json(payload): Json<UniversalTargetPayload>) -> Json<CommonResponse> {
     debug_fn!(payload);
-    match state.get_task_log(&payload.uuid) {
+    match state.get_task_log(&payload.target) {
         Ok(content) => {
             Json(CommonResponse { success: true, message: content })
         }

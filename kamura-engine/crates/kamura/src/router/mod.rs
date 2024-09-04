@@ -1,8 +1,8 @@
+pub use self::controller::*;
 pub use self::func::*;
 pub use self::integrator::*;
 pub use self::operator::*;
 pub use self::runner::*;
-pub use self::controller::*;
 
 mod func;
 mod payloads;

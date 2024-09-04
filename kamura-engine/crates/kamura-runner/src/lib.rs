@@ -1,3 +1,4 @@
+use kamura_core::consts::RUNNER_TASKS_SET_NAME;
 use redis::{Commands, RedisResult};
 use sayaka::{debug_fn, debug_var};
 use std::error::Error;
@@ -6,7 +7,6 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use tokio::process::Command;
 use uuid::Uuid;
-use kamura_core::consts::RUNNER_TASKS_SET_NAME;
 
 #[derive(Clone)]
 pub struct Runner {

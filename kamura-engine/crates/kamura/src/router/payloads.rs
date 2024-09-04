@@ -61,13 +61,8 @@ pub struct AddTaskPayload {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct GetTaskPayload {
-    pub uuid: String,
-}
-
-#[derive(Deserialize, Debug)]
-pub struct GetBuildDatePayload {
-    pub module: String,
+pub struct UniversalTargetPayload {
+    pub target: String,
 }
 
 #[derive(Deserialize, Debug)]

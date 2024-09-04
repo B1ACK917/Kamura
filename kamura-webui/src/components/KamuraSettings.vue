@@ -143,19 +143,23 @@ export default {
   methods: {
     async fetchPerseusInfo() {
       try {
-        const pathResponse = await axios.get(`${kamura_engine_url}/getPerseus`);
-        const versionResponse = await axios.get(`${kamura_engine_url}/getPerseusVersion`);
-        const versionDateResponse = await axios.get(`${kamura_engine_url}/getPerseusDate`);
-        const buildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {module: "Perseus"});
-        const spikeBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {module: "Spike"});
         const validResponse = await axios.get(`${kamura_engine_url}/getPerseusStatus`);
-
-        this.perseusPath = pathResponse.data.message;
-        this.perseusVersion = versionResponse.data.message;
-        this.perseusVersionDate = versionDateResponse.data.message;
         this.perseusValid.value = validResponse.data.message;
         this.perseusValid.type = validResponse.data.success ? 'success' : 'danger';
-        this.perseusBuildDate = buildDateResponse.data.message;
+
+        const pathResponse = await axios.get(`${kamura_engine_url}/getPerseus`);
+        this.perseusPath = pathResponse.data.message;
+
+        const versionResponse = await axios.get(`${kamura_engine_url}/getPerseusVersion`);
+        this.perseusVersion = versionResponse.data.message;
+
+        const versionDateResponse = await axios.get(`${kamura_engine_url}/getPerseusDate`);
+        this.perseusVersionDate = versionDateResponse.data.message;
+
+        const perseusBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {target: "Perseus"});
+        this.perseusBuildDate = perseusBuildDateResponse.data.message;
+
+        const spikeBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {target: "Spike"});
         this.spikeBuildDate = spikeBuildDateResponse.data.message;
       } catch (error) {
         console.error('Failed to fetch Perseus information:', error);
