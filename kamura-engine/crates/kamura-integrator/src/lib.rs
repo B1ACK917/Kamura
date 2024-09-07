@@ -145,7 +145,10 @@ impl Integrator {
             return;
         }
 
-        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, "Succeed").unwrap();
+
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, format!("Succeed at [{timestamp}]")).unwrap();
     }
 
     pub fn rebuild_perseus(&self) -> Result<(), Box<dyn Error>> {
@@ -193,7 +196,9 @@ impl Integrator {
             let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, "Failed to execute git pull".to_string()).unwrap();
             return;
         }
-        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, "Succeed").unwrap();
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, format!("Succeed at [{timestamp}]")).unwrap();
     }
 
     pub fn update_perseus(&self) -> Result<(), Box<dyn Error>> {
@@ -239,7 +244,9 @@ impl Integrator {
             let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, "Failed to execute build.sh".to_string()).unwrap();
             return;
         }
-        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, "Succeed").unwrap();
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, format!("Succeed at [{timestamp}]")).unwrap();
     }
 
     pub fn rebuild_spike(&self) -> Result<(), Box<dyn Error>> {

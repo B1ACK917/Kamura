@@ -1,7 +1,7 @@
 <template>
   <KamuraMain/>
   <footer style="position: absolute; bottom: 0; width: 100%">
-    Powered by Kamura-Engine
+    Powered by Kamura-Engine & Perseus Model
   </footer>
 </template>
 
@@ -23,6 +23,6 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin-top: 10px;
 }
 </style>

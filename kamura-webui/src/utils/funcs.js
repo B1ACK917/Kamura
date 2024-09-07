@@ -49,13 +49,27 @@ export function addAUnit(unitName, unitType, units, topology, elements) {
     return elements;
 }
 
+export function checkBinding(bindingStack, nodeID) {
+    if (nodeID.includes('.')) {
+        if (bindingStack != null) {
+            if (bindingStack.endsWith("out") && nodeID.endsWith("out")) {
+                return [false, "Trying to bind two OUT ports!"];
+            }
+            if (bindingStack.endsWith("in") && nodeID.endsWith("in")) {
+                return [false, "Trying to bind two IN ports!"];
+            }
+        }
+        return [true, ""];
+    } else {
+        return [false, "Looks like not a port?"];
+    }
+}
+
 export function updateBinding(bindingStack, nodeID, topology, elements, popBinding = true) {
     const newEdge = [];
     if (bindingStack) {
-        let source = null, target = null;
-        if (bindingStack.includes("out")) {
-            [source, target] = [bindingStack, nodeID];
-        } else {
+        let [source, target] = [bindingStack, nodeID];
+        if (nodeID.endsWith("out")) {
             [source, target] = [nodeID, bindingStack];
         }
 

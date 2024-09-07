@@ -55,7 +55,6 @@
 
 <script>
 import axios from 'axios';
-import {SuccessFilled, CircleCloseFilled, QuestionFilled} from '@element-plus/icons-vue';
 import {kamura_engine_url} from "@/utils/consts";
 
 export default {

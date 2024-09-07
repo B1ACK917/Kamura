@@ -180,7 +180,7 @@ export default {
         const data = JSON.parse(message.data);
         switch (data.success) {
           case true:
-            switch (data.message) {
+            switch (data.message.slice(0,7)) {
               case 'Succeed':
                 updateObj.type = "success";
                 updateObj.value = "Success";

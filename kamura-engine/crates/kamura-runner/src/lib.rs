@@ -77,13 +77,13 @@ impl Runner {
         if workload_type == "trace" {
             workload_path = self.get_zstf_path(&workload).to_str().unwrap().to_string();
             command_str = format!(
-                "{} --run --arch {} --workload {} > /tmp/kamura/{}.log 2>&1",
+                "{} --arch {} --workload {} > /tmp/kamura/{}.log 2>&1",
                 perseus_bin.to_str().unwrap(), arch, workload_path, uuid.to_string()
             );
         } else {
             workload_path = self.get_elf_path(&workload).to_str().unwrap().to_string();
             command_str = format!(
-                "{} --run --arch {} --elf {} > /tmp/kamura/{}.log 2>&1",
+                "{} --arch {} --elf {} > /tmp/kamura/{}.log 2>&1",
                 perseus_bin.to_str().unwrap(), arch, workload_path, uuid.to_string()
             );
         }
