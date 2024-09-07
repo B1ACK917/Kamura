@@ -1,6 +1,6 @@
 <template>
   <KamuraMain/>
-  <footer style="position: absolute; bottom: 0; width: 100%">
+  <footer style="position: absolute; bottom: 0; width: 100%; height: 20px">
     Powered by Kamura-Engine & Perseus Model
   </footer>
 </template>

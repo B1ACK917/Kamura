@@ -1,5 +1,5 @@
 <template>
-  <el-container class="kamura-viewer" style="height: 90vh">
+  <el-container class="kamura-viewer" style="height: 80vh">
     <el-scrollbar>
       <el-radio-group v-model="leftCollapse" style="margin-bottom: 20px">
         <el-radio-button :value="true">
@@ -32,22 +32,6 @@
             </el-menu-item>
           </el-menu-item-group>
         </el-sub-menu>
-
-        <!--        <el-sub-menu index="2">-->
-        <!--          <template #title>-->
-        <!--            <el-icon>-->
-        <!--              <Edit/>-->
-        <!--            </el-icon>-->
-        <!--            <span>Mode</span>-->
-        <!--          </template>-->
-        <!--          <el-menu-item-group>-->
-        <!--            <el-menu-item index="2-1" @click="this.mode='view';this.bindingStack=null">View Mode</el-menu-item>-->
-        <!--            <el-menu-item index="2-2" @click="this.mode='bind';this.bindingStack=null">Bind Mode</el-menu-item>-->
-        <!--            <el-menu-item index="2-3" @click="this.mode='bindFrom';this.bindingStack=null">Bind-From Mode-->
-        <!--            </el-menu-item>-->
-        <!--            <el-menu-item index="2-4" @click="this.mode='remove';this.bindingStack=null">Remove Mode</el-menu-item>-->
-        <!--          </el-menu-item-group>-->
-        <!--        </el-sub-menu>-->
 
         <el-sub-menu index="3">
           <template #title>
@@ -84,64 +68,6 @@
       <el-main>
         <div ref="cyRef" style="width: 99%; height: 75vh; text-align: left" class="cyRef"></div>
       </el-main>
-      <el-footer style="height: 10vh">
-        <el-row :gutter="2">
-          <el-col :span="8">
-            <el-menu
-                :default-active='"1"'
-                class="kamura-footer-menu"
-                mode="horizontal"
-                :ellipsis="false"
-            >
-              <el-menu-item index="1" @click="this.mode='view';this.bindingStack=null">View Mode</el-menu-item>
-              <el-menu-item index="2" @click="this.mode='bind';this.bindingStack=null">Bind Mode</el-menu-item>
-              <el-menu-item index="3" @click="this.mode='bindFrom';this.bindingStack=null">Bind-From Mode
-              </el-menu-item>
-              <el-menu-item index="4" @click="this.mode='remove';this.bindingStack=null">Remove Mode</el-menu-item>
-            </el-menu>
-          </el-col>
-          <el-col :span="4">
-            <div>
-              <el-text type="info" truncated>Selected Port</el-text>
-            </div>
-            <div>
-              <el-text type="primary" truncated size="small">{{ bindingStack }}</el-text>
-            </div>
-          </el-col>
-          <el-col :span="4">
-            <div>
-              <el-text type="info" truncated>Node-In</el-text>
-            </div>
-            <div
-                v-for="(ele,index) in this.lastInformation.ins"
-                :key="index">
-              <el-text type="primary" truncated size="small">{{ ele }}</el-text>
-            </div>
-          </el-col>
-          <el-col :span="4">
-            <div>
-              <el-text type="info" truncated>Node-Out</el-text>
-            </div>
-            <div
-                v-for="(ele,index) in this.lastInformation.outs"
-                :key="index">
-              <el-text type="primary" truncated size="small">{{ ele }}</el-text>
-            </div>
-          </el-col>
-          <el-col :span="4">
-            <div>
-              <el-text type="info" truncated>Edge Info</el-text>
-            </div>
-            <div>
-              <el-text type="primary" truncated size="small">From: {{ lastInformation.from }}</el-text>
-            </div>
-            <div>
-              <el-text type="primary" truncated size="small">To: {{ lastInformation.to }}</el-text>
-            </div>
-          </el-col>
-        </el-row>
-
-      </el-footer>
     </el-container>
 
     <el-scrollbar>
@@ -199,7 +125,66 @@
 
       </el-menu>
     </el-scrollbar>
+  </el-container>
+  <el-container>
+    <el-footer style="height: 10vh; margin-left: 5vw">
+      <el-row :gutter="2">
+        <el-col :span="8">
+          <el-menu
+              :default-active='"1"'
+              class="kamura-footer-menu"
+              mode="horizontal"
+              :ellipsis="false"
+          >
+            <el-menu-item index="1" @click="this.mode='view';this.bindingStack=null">View Mode</el-menu-item>
+            <el-menu-item index="2" @click="this.mode='bind';this.bindingStack=null">Bind Mode</el-menu-item>
+            <el-menu-item index="3" @click="this.mode='bindFrom';this.bindingStack=null">Bind-From Mode
+            </el-menu-item>
+            <el-menu-item index="4" @click="this.mode='remove';this.bindingStack=null">Remove Mode</el-menu-item>
+          </el-menu>
+        </el-col>
+        <el-col :span="4">
+          <div>
+            <el-text type="info" truncated>Selected Port</el-text>
+          </div>
+          <div>
+            <el-text type="primary" truncated size="small">{{ bindingStack }}</el-text>
+          </div>
+        </el-col>
+        <el-col :span="4">
+          <div>
+            <el-text type="info" truncated>Node-In</el-text>
+          </div>
+          <div
+              v-for="(ele,index) in this.lastInformation.ins"
+              :key="index">
+            <el-text type="primary" truncated size="small">{{ ele }}</el-text>
+          </div>
+        </el-col>
+        <el-col :span="4">
+          <div>
+            <el-text type="info" truncated>Node-Out</el-text>
+          </div>
+          <div
+              v-for="(ele,index) in this.lastInformation.outs"
+              :key="index">
+            <el-text type="primary" truncated size="small">{{ ele }}</el-text>
+          </div>
+        </el-col>
+        <el-col :span="4">
+          <div>
+            <el-text type="info" truncated>Edge Info</el-text>
+          </div>
+          <div>
+            <el-text type="primary" truncated size="small">From: {{ lastInformation.from }}</el-text>
+          </div>
+          <div>
+            <el-text type="primary" truncated size="small">To: {{ lastInformation.to }}</el-text>
+          </div>
+        </el-col>
+      </el-row>
 
+    </el-footer>
   </el-container>
 </template>
 
