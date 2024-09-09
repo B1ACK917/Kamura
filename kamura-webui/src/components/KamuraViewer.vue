@@ -202,8 +202,8 @@ export default {
   name: 'KamuraViewer',
   data() {
     return {
-      leftCollapse: true,
-      rightCollapse: true,
+      leftCollapse: false,
+      rightCollapse: false,
       arches: [],
       selectedArch: null,
       topology: null,

@@ -12,6 +12,7 @@ use kamura_runner::Runner;
 use sayaka::debug_fn;
 use std::error::Error;
 use std::path::PathBuf;
+use tokio::signal;
 use tower_http::cors::{Any, CorsLayer};
 
 #[tokio::main]
@@ -66,7 +67,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .layer(cors);
     let listener = tokio::net::TcpListener::bind(bind_address).await?;
     println!("Kamura running on {}", listener.local_addr()?);
-    axum::serve(listener, app).await.unwrap();
+    axum::serve(listener, app).with_graceful_shutdown(shutdown_signal()).await.unwrap();
 
     Ok(())
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
