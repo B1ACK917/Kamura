@@ -3,13 +3,13 @@
     <el-header style="font-size: 12px">
       <el-tabs v-model="activeName" class="demo-tabs">
         <el-tab-pane label="Kamura-Viewer" name="first">
-          <kamura-viewer></kamura-viewer>
+          <kamura-viewer @updateSharedValues="updateSharedValues"></kamura-viewer>
         </el-tab-pane>
         <el-tab-pane label="Kamura-Runner" name="second">
-          <kamura-runner v-if="activeName === 'second'"></kamura-runner>
+          <kamura-runner v-if="activeName === 'second'" :sharedSelectedArch="sharedSelectedArch"></kamura-runner>
         </el-tab-pane>
         <el-tab-pane label="Settings" name="third">
-          <kamura-settings v-if="activeName === 'third'"></kamura-settings>
+          <kamura-settings v-if="activeName === 'third'" :sharedSelectedArch="sharedSelectedArch"></kamura-settings>
         </el-tab-pane>
       </el-tabs>
     </el-header>
@@ -27,9 +27,16 @@ export default {
   components: {KamuraSettings, KamuraRunner, KamuraViewer},
   data() {
     return {
-      activeName: 'first'
+      activeName: 'first',
+      sharedSelectedArch: null
     };
   },
+  methods: {
+    updateSharedValues(newValue) {
+      console.log(newValue);
+      this.sharedSelectedArch = newValue;
+    }
+  }
 };
 </script>
 

@@ -59,12 +59,19 @@ import {kamuraEngineUrl} from "@/utils/consts";
 
 export default {
   name: 'KamuraRunner',
+  props: {
+    sharedSelectedArch: {
+      type: String, // Adjust the type based on the expected type of `sharedSelectedArch`
+      default: null
+    }
+  },
   data() {
     return {
       tasks: [],  // Store tasks with uuid, color, icon
       traceWorkloads: [],
       elfWorkloads: [],
-      wsList: []
+      wsList: [],
+      selectedArch: null
     };
   },
   async created() {
@@ -152,7 +159,7 @@ export default {
     async addTaskToRunner(workload, workloadType) {
       try {
         const response = await axios.post(`${kamuraEngineUrl}/addTask`, {
-          arch: 'simple_arch',
+          arch: this.sharedSelectedArch,
           workload: workload,
           workload_type: workloadType
         });

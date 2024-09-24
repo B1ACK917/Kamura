@@ -1,5 +1,3 @@
-import {commonFetchPost} from "@/utils/funcs";
-
 export const kamuraEngineUrl = "https://kamura-engine.malloc.fun"
 export const topologyTemplate = {
     "hierarchy": {},

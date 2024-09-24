@@ -207,6 +207,7 @@ import {ElMessage, ElMessageBox} from 'element-plus'
 
 export default {
   name: 'KamuraViewer',
+  props: ['updateSharedValues'],
   data() {
     return viewerDefaultVars;
   },
@@ -233,6 +234,7 @@ export default {
     },
     async fetchAndLoadCy(target) {
       this.selectedArch = target;
+      this.$emit("updateSharedValues", target)
       await this.fetchArch(target, false);
       this.initCytoscape()
     },
@@ -333,15 +335,14 @@ export default {
         cancelButtonText: 'Cancel',
         inputValue: unitType
       }).then(({value}) => {
+        [this.cyElements, this.raw.topology, this.eval.instances] = addAUnit(value, unitType, this.raw.units, this.raw.topology, this.cyElements, this.eval.instances);
+        this.initCytoscape();
         ElMessage({
           type: 'success',
           message: `Add: ${value} as ${unitType}`,
-        })
-        this.cyElements = addAUnit(value, unitType, this.units, this.topology, this.cyElements);
-        this.instances.push(value);
-        this.instances.sort();
-        this.initCytoscape();
-      }).catch(() => {
+        });
+      }).catch((err) => {
+        console.error(err);
         ElMessage({
           type: 'info',
           message: 'Add canceled',

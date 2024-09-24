@@ -1,24 +1,20 @@
 import axios from "axios";
-import {kamuraEngineUrl} from "@/utils/consts";
 
-function addNewModule(unitName, unitType, units, elements, nodeGap = [10, 10]) {
+function addNewModuleToElements(unitName, unitType, units, elements, nodeGap = [10, 10]) {
     let [x, y] = [0, 0];
     const [nodeGapX, nodeGapY] = nodeGap;
-    console.log(units);
-    console.log(unitType);
-    console.log(units[unitType]);
-    const ports = units[unitType]["ports"];
+    const ports = units["units"][unitType]["ports"];
     elements.push({data: {id: unitName, label: unitName}, classes: 'subgraph'});
+    const hierarchy = units["units"][unitType]["hierarchy"];
     for (const port of ports["in_ports"]) {
         const data = {
             data: {
-                id: `${unitName}.ports.${port}`,
+                id: `${hierarchy}.${unitName}.ports.${port}`,
                 label: port,
                 parent: unitName
             },
             position: {x, y}
         };
-        // console.log(data);
         elements.push(data);
         x += nodeGapX;
     }
@@ -28,7 +24,7 @@ function addNewModule(unitName, unitType, units, elements, nodeGap = [10, 10]) {
     for (const port of ports["out_ports"]) {
         const data = {
             data: {
-                id: `${unitName}.ports.${port}`,
+                id: `${hierarchy}.${unitName}.ports.${port}`,
                 label: port,
                 parent: unitName
             },
@@ -40,15 +36,25 @@ function addNewModule(unitName, unitType, units, elements, nodeGap = [10, 10]) {
     return elements;
 }
 
-export function addAUnit(unitName, unitType, units, topology, elements) {
-    if (unitType in topology["instances"]) {
-        topology["instances"][unitType].push(unitName);
-    } else {
-        topology["instances"][unitType] = [unitName];
+function addNewModuleToTopology(unitName, unitType, units, topology) {
+    const hierarchy = units["units"][unitType]["hierarchy"];
+    const params = units["units"][unitType]["params"];
+    const [core, part] = hierarchy.split(".");
+    console.log(core, part);
+    for (let items of topology["hierarchy"][core][part]) {
+        if (unitType in items) {
+            items[unitType][unitName] = params;
+        }
     }
-    console.log(topology);
-    elements = addNewModule(unitName, unitType, units, elements, [400, 100]);
-    return elements;
+    return topology;
+}
+
+export function addAUnit(unitName, unitType, units, topology, elements, instances) {
+    elements = addNewModuleToElements(unitName, unitType, units, elements, [400, 100]);
+    topology = addNewModuleToTopology(unitName, unitType, units, topology);
+    instances.push(unitName);
+    instances.sort();
+    return [elements, topology, instances];
 }
 
 export function checkBinding(bindingStack, nodeID) {
