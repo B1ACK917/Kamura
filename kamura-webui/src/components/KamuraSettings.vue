@@ -96,7 +96,7 @@
 </template>
 
 <script>
-import {kamura_engine_url} from "@/utils/consts";
+import {kamuraEngineUrl} from "@/utils/consts";
 import axios from "axios";
 
 export default {
@@ -143,39 +143,39 @@ export default {
   methods: {
     async fetchPerseusInfo() {
       try {
-        const validResponse = await axios.get(`${kamura_engine_url}/getPerseusStatus`);
+        const validResponse = await axios.get(`${kamuraEngineUrl}/getPerseusStatus`);
         this.perseusValid.value = validResponse.data.message;
         this.perseusValid.type = validResponse.data.success ? 'success' : 'danger';
 
-        const pathResponse = await axios.get(`${kamura_engine_url}/getPerseus`);
+        const pathResponse = await axios.get(`${kamuraEngineUrl}/getPerseus`);
         this.perseusPath = pathResponse.data.message;
 
-        const versionResponse = await axios.get(`${kamura_engine_url}/getPerseusVersion`);
+        const versionResponse = await axios.get(`${kamuraEngineUrl}/getPerseusVersion`);
         this.perseusVersion = versionResponse.data.message;
 
-        const versionDateResponse = await axios.get(`${kamura_engine_url}/getPerseusDate`);
+        const versionDateResponse = await axios.get(`${kamuraEngineUrl}/getPerseusDate`);
         this.perseusVersionDate = versionDateResponse.data.message;
 
-        const perseusBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {target: "Perseus"});
+        const perseusBuildDateResponse = await axios.post(`${kamuraEngineUrl}/getBuildDate`, {target: "Perseus"});
         this.perseusBuildDate = perseusBuildDateResponse.data.message;
 
-        const spikeBuildDateResponse = await axios.post(`${kamura_engine_url}/getBuildDate`, {target: "Spike"});
+        const spikeBuildDateResponse = await axios.post(`${kamuraEngineUrl}/getBuildDate`, {target: "Spike"});
         this.spikeBuildDate = spikeBuildDateResponse.data.message;
       } catch (error) {
         console.error('Failed to fetch Perseus information:', error);
       }
     },
     async submitRebuildPerseus() {
-      await axios.get(`${kamura_engine_url}/rebuildPerseus`);
+      await axios.get(`${kamuraEngineUrl}/rebuildPerseus`);
     },
     async submitUpdatePerseus() {
-      await axios.get(`${kamura_engine_url}/updatePerseus`);
+      await axios.get(`${kamuraEngineUrl}/updatePerseus`);
     },
     async submitRebuildSpike() {
-      await axios.get(`${kamura_engine_url}/rebuildSpike`);
+      await axios.get(`${kamuraEngineUrl}/rebuildSpike`);
     },
     async startUpdateStatus(updateObj, api) {
-      const ws = new WebSocket(`${kamura_engine_url}/ws/${api}`);
+      const ws = new WebSocket(`${kamuraEngineUrl}/ws/${api}`);
       ws.onmessage = (message) => {
         const data = JSON.parse(message.data);
         switch (data.success) {

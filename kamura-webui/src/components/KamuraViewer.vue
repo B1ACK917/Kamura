@@ -94,7 +94,7 @@
           </template>
           <el-menu-item-group>
             <el-menu-item
-                v-for="(_, unit, index) in this.units"
+                v-for="(_, unit, index) in this.eval.orderedUnits"
                 :key="index"
                 :index="`1-${index + 1}`"
                 @click="addNewUnit(unit)"
@@ -109,11 +109,11 @@
             <el-icon>
               <Location/>
             </el-icon>
-            <span>Goto Instance</span>
+            <span>Go to Instance</span>
           </template>
           <el-menu-item-group>
             <el-menu-item
-                v-for="(instance, index) in this.instances"
+                v-for="(instance, index) in this.eval.instances"
                 :key="index"
                 :index="`2-${index + 1}`"
                 @click="gotoInstance(instance)"
@@ -191,36 +191,24 @@
 
 <script>
 import cytoscape from 'cytoscape';
-import {options} from '@/utils/layout';
-import {kamura_engine_url, topology_template} from "@/utils/consts";
-import axios from "axios";
-import {addAUnit, checkBinding, updateBinding} from "@/utils/funcs";
+import {options, styles} from '@/utils/layout';
+import {kamuraEngineUrl, topologyTemplate, viewerDefaultVars} from "@/utils/consts";
+import {
+  addAUnit,
+  checkBinding,
+  commonFetchGet,
+  commonFetchPost,
+  parseArch,
+  parseUnits,
+  updateBinding
+} from "@/utils/funcs";
 import {ElMessage, ElMessageBox} from 'element-plus'
 
 
 export default {
   name: 'KamuraViewer',
   data() {
-    return {
-      leftCollapse: false,
-      rightCollapse: false,
-      arches: [],
-      selectedArch: null,
-      topology: null,
-      units: null,
-      instances: null,
-      cy: null,
-      cyElements: [],
-      removedNodes: [],
-      mode: "view",
-      bindingStack: null,
-      lastInformation: {
-        ins: [],
-        outs: [],
-        from: null,
-        to: null,
-      }
-    };
+    return viewerDefaultVars;
   },
   mounted() {
     this.fetchArchesList();
@@ -229,33 +217,16 @@ export default {
   methods: {
     async fetchArchesList() {
       try {
-        const response = await axios.get(`${kamura_engine_url}/listArches`);
-        const data = response.data;
-        if (data.success) {
-          this.arches = data.arches;
-        } else {
-          console.error("Failed to fetch arches:", data.message);
-        }
+        const data = await commonFetchGet(`${kamuraEngineUrl}/listArches`);
+        this.arches = data.arches;
       } catch (error) {
         console.error("Error fetching arches:", error);
       }
     },
     async fetchUnitsList() {
       try {
-        const response = await axios.get(`${kamura_engine_url}/getUnits`);
-        const data = response.data;
-        if (data.success) {
-          const orderedUnits = Object.keys(data.units).sort().reduce(
-              (obj, key) => {
-                obj[key] = data.units[key];
-                return obj;
-              },
-              {}
-          );
-          this.units = orderedUnits;
-        } else {
-          console.error("Failed to fetch units:", data.message);
-        }
+        const data = await commonFetchGet(`${kamuraEngineUrl}/getUnits`);
+        [this.raw.units, this.eval.orderedUnits] = parseUnits(data);
       } catch (error) {
         console.error("Error fetching units:", error);
       }
@@ -267,27 +238,17 @@ export default {
     },
     async fetchArch(target, reset) {
       try {
-        const response = await axios.post(`${kamura_engine_url}/getArchElements`, {
-          target,
-          reset
-        });
-        const data = response.data;
-        this.cyElements = data.elements;
-        this.topology = data.topology;
-        this.instances = [];
-        for (let name in data.topology.instances) {
-          this.instances.push(...data.topology.instances[name]);
-        }
-        this.instances.sort();
+        const data = await commonFetchPost(`${kamuraEngineUrl}/getArchElements`, {target, reset});
+        [this.cyElements, this.raw.topology, this.eval.instances] = parseArch(data);
       } catch (error) {
         console.error("Error fetching arch:", error);
       }
     },
     async saveArch() {
       try {
-        await axios.post(`${kamura_engine_url}/saveArchElements`, {
+        await commonFetchPost(`${kamuraEngineUrl}/saveArchElements`, {
           target: this.selectedArch,
-          topology: this.topology,
+          topology: this.raw.topology,
           elements: this.cyElements
         });
         ElMessage({
@@ -304,9 +265,9 @@ export default {
         cancelButtonText: 'Cancel',
         inputPlaceholder: 'Arch Name'
       }).then(async ({value}) => {
-        await axios.post(`${kamura_engine_url}/saveArchElements`, {
+        await commonFetchPost(`${kamuraEngineUrl}/saveArchElements`, {
           target: value,
-          topology: topology_template,
+          topology: topologyTemplate,
           elements: []
         });
         await this.fetchAndLoadCy(value);
@@ -330,9 +291,7 @@ export default {
         })
       }
       try {
-        await axios.post(`${kamura_engine_url}/removeArch`, {
-          target: this.selectedArch,
-        });
+        await commonFetchPost(`${kamuraEngineUrl}/removeArch`, {target: this.selectedArch,});
         ElMessage({
           type: 'success',
           message: `Remove ${this.selectedArch} from Kamura-Engine`,
@@ -357,46 +316,12 @@ export default {
       this.cy = cytoscape({
         container: this.$refs.cyRef,
         elements: this.cyElements,
-        style: [
-          {
-            selector: 'node',
-            style: {
-              'background-color': '#fff',
-              'border-color': '#000',
-              'border-width': '1px',
-              'label': 'data(label)',
-              'text-valign': 'center',
-              'color': '#000',
-              'width': '40px',
-              'height': '40px',
-            }
-          },
-          {
-            selector: '.subgraph',
-            style: {
-              'background-color': '#ddd',
-              'shape': 'rectangle',
-              'padding': '10px',
-              'text-font': '20',
-              'border-color': '#333',
-              'border-width': '2px'
-            }
-          },
-          {
-            selector: 'edge',
-            style: {
-              'line-color': '#111',
-              'target-arrow-color': '#000',
-              'target-arrow-shape': 'triangle',
-              'curve-style': 'bezier'
-            }
-          }
-        ],
+        style: styles.default,
         layout: options.preset
       });
     },
     addNewUnit(unitType) {
-      if(this.selectedArch==null) {
+      if (this.selectedArch == null) {
         ElMessage({
           type: 'error',
           message: `No selected arch!`,
@@ -442,7 +367,7 @@ export default {
               ElMessage.error(res);
               break;
             }
-            [self.bindingStack, newEdge, self.topology, self.cyElements] = updateBinding(self.bindingStack, nodeID, self.topology, self.cyElements);
+            [self.bindingStack, newEdge, self.raw.topology, self.cyElements] = updateBinding(self.bindingStack, nodeID, self.raw.topology, self.cyElements);
             self.cy.add(newEdge);
             break;
           case 'bindFrom':
@@ -451,7 +376,7 @@ export default {
               ElMessage.error(res);
               break;
             }
-            [self.bindingStack, newEdge, self.topology, self.cyElements] = updateBinding(self.bindingStack, nodeID, self.topology, self.cyElements, false);
+            [self.bindingStack, newEdge, self.raw.topology, self.cyElements] = updateBinding(self.bindingStack, nodeID, self.raw.topology, self.cyElements, false);
             self.cy.add(newEdge);
             break;
           default:
@@ -467,7 +392,7 @@ export default {
             self.cy.remove(edge);
             self.cyElements = self.cyElements.filter(item => item.data.id !== edgeID);
             const [source, target] = edgeID.split('-');
-            self.topology.binding = self.topology.binding.filter(item => !(item.source === source && item.target === target));
+            self.raw.topology.binding = self.raw.topology.binding.filter(item => !(item.source === source && item.target === target));
             break;
           default:
             break;
@@ -486,7 +411,6 @@ export default {
       });
       this.cy.on('mouseover', 'edge', async function (evt) {
         const edge = evt.target;
-        // const edgeID = edge.id();
         self.lastInformation.from = edge.source().id().replace('.ports', '');
         self.lastInformation.to = edge.target().id().replace('.ports', '');
       });

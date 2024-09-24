@@ -55,7 +55,7 @@
 
 <script>
 import axios from 'axios';
-import {kamura_engine_url} from "@/utils/consts";
+import {kamuraEngineUrl} from "@/utils/consts";
 
 export default {
   name: 'KamuraRunner',
@@ -93,7 +93,7 @@ export default {
     },
     async fetchAllTasks() {
       try {
-        const response = await axios.get(`${kamura_engine_url}/getAllTasks`);
+        const response = await axios.get(`${kamuraEngineUrl}/getAllTasks`);
         if (response.data.success) {
           const newTasks = response.data.tasks.filter(task => {
             return !this.tasks.some(existingTask => existingTask.uuid === task);
@@ -114,7 +114,7 @@ export default {
     async startUpdateTaskStatuses() {
       this.wsList = [];
       for (let task of this.tasks) {
-        const ws = new WebSocket(`${kamura_engine_url}/ws/getTaskStatus/${task.uuid}`);
+        const ws = new WebSocket(`${kamuraEngineUrl}/ws/getTaskStatus/${task.uuid}`);
         ws.onmessage = (message) => {
           switch (message.data) {
             case "Succeed":
@@ -140,7 +140,7 @@ export default {
     },
     async fetchTaskLog(uuid) {
       try {
-        const response = await axios.post(`${kamura_engine_url}/getTaskLog`, {target: uuid});
+        const response = await axios.post(`${kamuraEngineUrl}/getTaskLog`, {target: uuid});
         if (response.data.success) {
           let responseSpan = document.getElementById("log")
           responseSpan.innerHTML = response.data.message
@@ -151,8 +151,8 @@ export default {
     },
     async addTaskToRunner(workload, workloadType) {
       try {
-        const response = await axios.post(`${kamura_engine_url}/addTask`, {
-          arch: 'simple',
+        const response = await axios.post(`${kamuraEngineUrl}/addTask`, {
+          arch: 'simple_arch',
           workload: workload,
           workload_type: workloadType
         });
