@@ -1,4 +1,4 @@
-use kamura_core::consts::RUNNER_TASKS_SET_NAME;
+use kamura_core::consts::{OPERATOR_ARCH_DIR, RUNNER_TASKS_SET_NAME};
 use redis::{Commands, RedisResult};
 use sayaka::{debug_fn, debug_var};
 use std::error::Error;
@@ -74,17 +74,18 @@ impl Runner {
         let perseus_bin = perseus_build.join("model");
         let workload_path;
         let command_str;
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{arch}.json")).to_str().unwrap().to_string();
         if workload_type == "trace" {
             workload_path = self.get_zstf_path(&workload).to_str().unwrap().to_string();
             command_str = format!(
-                "{} --arch {} --workload {} > /tmp/kamura/{}.log 2>&1",
-                perseus_bin.to_str().unwrap(), arch, workload_path, uuid.to_string()
+                "{} --json {} --workload {} > /tmp/kamura/{}.log 2>&1",
+                perseus_bin.to_str().unwrap(), arch_path, workload_path, uuid.to_string()
             );
         } else {
             workload_path = self.get_elf_path(&workload).to_str().unwrap().to_string();
             command_str = format!(
                 "{} --arch {} --elf {} > /tmp/kamura/{}.log 2>&1",
-                perseus_bin.to_str().unwrap(), arch, workload_path, uuid.to_string()
+                perseus_bin.to_str().unwrap(), arch_path, workload_path, uuid.to_string()
             );
         }
         debug_var!(command_str);

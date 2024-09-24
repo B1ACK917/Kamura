@@ -22,31 +22,41 @@ pub struct Edge {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Topology {
-    pub instances: HashMap<String, Vec<String>>,
+    pub hierarchy: Value,
+    pub instances: Value,
     pub binding: Vec<Edge>,
 }
 
 impl Topology {
-    pub fn new() -> Self {
-        Topology {
-            instances: Default::default(),
-            binding: Default::default(),
-        }
+    pub fn new() -> Topology {
+        Topology { hierarchy: Default::default(), instances: Default::default(), binding: vec![] }
     }
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct BasicPorts {
-    pub out_ports: Vec<String>,
-    pub in_ports: Vec<String>,
+pub struct BasicUnit {
+    pub ports: HashMap<String, Value>,
+    pub params: HashMap<String, Value>,
+    pub hierarchy: String,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-pub struct BasicUnit {
-    pub ports: BasicPorts,
+pub struct BasicHierarchy {
+    pub info: Vec<String>,
+    pub core0: HashMap<String, Vec<String>>,
 }
 
-pub type Units = HashMap<String, BasicUnit>;
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Units {
+    pub units: HashMap<String, BasicUnit>,
+    pub hierarchy: BasicHierarchy,
+}
+
+impl Units {
+    pub fn new() -> Units {
+        Units { units: Default::default(), hierarchy: BasicHierarchy { info: vec![], core0: Default::default() } }
+    }
+}
 
 #[derive(Clone)]
 pub struct Operator {
@@ -75,12 +85,8 @@ impl Operator {
         for entry in fs::read_dir(arch_path)? {
             let entry = entry?;
             let path = entry.path();
-            if path.is_dir() {
-                if let Some(dir_name) = path.file_name() {
-                    if let Some(dir_name_str) = dir_name.to_str() {
-                        arches.push(dir_name_str.to_string());
-                    }
-                }
+            if !path.is_dir() {
+                arches.push(path.file_stem().unwrap().to_str().unwrap().to_string());
             }
         }
         arches.sort();
@@ -89,7 +95,7 @@ impl Operator {
 
     pub fn read_units(&self) -> Result<Units, Box<dyn Error>> {
         debug_fn!();
-        let units_path = self.perseus.join(OPERATOR_ARCH_DIR).join("units.json");
+        let units_path = self.perseus.join("config/py_file/units.json");
         let mut file = fs::File::open(&units_path)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
@@ -100,11 +106,11 @@ impl Operator {
 
     pub fn read_arch(&self, target_arch: &String) -> Result<Topology, Box<dyn Error>> {
         debug_fn!();
-        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(target_arch);
-        if !arch_path.exists() || !arch_path.is_dir() {
-            return Err(format!("The path {:?} does not exist or is not a directory", arch_path).into());
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{target_arch}.json"));
+        if !arch_path.exists() {
+            return Err(format!("The path {:?} does not exist", arch_path).into());
         }
-        let topology_path = arch_path.join("topology.json");
+        let topology_path = arch_path;
         let mut file = fs::File::open(&topology_path)?;
         let mut content = String::new();
         file.read_to_string(&mut content)?;
@@ -135,11 +141,8 @@ impl Operator {
         debug_fn!();
         let serialized_data = serde_json::to_string(&elements).unwrap();
 
-        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(&arch_name);
-        fs::create_dir_all(&arch_path)?;
-
-        let topology_path = arch_path.join("topology.json");
-        let topology_file = File::create(topology_path)?;
+        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{arch_name}.json"));
+        let topology_file = File::create(arch_path)?;
         serde_json::to_writer_pretty(topology_file, &topology)?;
 
         let _: () = self.con.lock().unwrap().hset(OPERATOR_ARCH_LAYOUTS_SET_NAME, format!("{arch_name}"), serialized_data)?;
