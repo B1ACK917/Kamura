@@ -75,6 +75,7 @@ impl Runner {
         let workload_path;
         let command_str;
         let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{arch}.json")).to_str().unwrap().to_string();
+        fs::create_dir_all("/tmp/kamura").unwrap();
         if workload_type == "trace" {
             workload_path = self.get_zstf_path(&workload).to_str().unwrap().to_string();
             command_str = format!(

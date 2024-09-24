@@ -23,13 +23,12 @@ pub struct Edge {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Topology {
     pub hierarchy: Value,
-    pub instances: Value,
     pub binding: Vec<Edge>,
 }
 
 impl Topology {
     pub fn new() -> Topology {
-        Topology { hierarchy: Default::default(), instances: Default::default(), binding: vec![] }
+        Topology { hierarchy: Default::default(), binding: vec![] }
     }
 }
 
