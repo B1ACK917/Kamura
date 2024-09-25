@@ -51,6 +51,13 @@ pub struct Arch {
     pub message: String,
 }
 
+#[derive(Serialize)]
+pub struct TaskLogInfo {
+    pub success: bool,
+    pub arch: String,
+    pub workload: String
+}
+
 // IN PAYLOADS
 
 #[derive(Deserialize, Debug)]

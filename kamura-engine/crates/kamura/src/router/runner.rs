@@ -1,4 +1,4 @@
-use crate::router::payloads::{AddTaskPayload, CommonResponse, Tasks, UniversalTargetPayload, Workloads};
+use crate::router::payloads::{AddTaskPayload, CommonResponse, TaskLogInfo, Tasks, UniversalTargetPayload, Workloads};
 use axum::extract::ws::{Message, WebSocket};
 use axum::extract::{Path, State, WebSocketUpgrade};
 use axum::response::IntoResponse;
@@ -38,15 +38,37 @@ pub async fn add_task(mut state: State<Runner>, Json(payload): Json<AddTaskPaylo
     }
 }
 
-pub async fn get_task_log(state: State<Runner>, Json(payload): Json<UniversalTargetPayload>) -> Json<CommonResponse> {
+pub async fn get_task_info(state: State<Runner>, Json(payload): Json<UniversalTargetPayload>) -> Json<TaskLogInfo> {
     debug_fn!(payload);
-    match state.get_task_log(&payload.target) {
-        Ok(content) => {
-            Json(CommonResponse { success: true, message: content })
+    match state.get_task_info(&payload.target) {
+        Ok(info) => {
+            Json(TaskLogInfo { success: true, arch: info[0].clone(), workload: info[1].clone() })
         }
-        Err(err) => {
-            Json(CommonResponse { success: false, message: err.to_string() })
+        Err(_) => {
+            Json(TaskLogInfo { success: false, arch: "".to_string(), workload: "".to_string() })
         }
+    }
+}
+
+pub async fn get_task_log(ws: WebSocketUpgrade, Path(uuid): Path<String>, state: State<Runner>) -> impl IntoResponse {
+    debug_fn!();
+    ws.on_upgrade(|socket| get_task_log_handler(socket, state, uuid))
+}
+
+async fn get_task_log_handler(mut socket: WebSocket, state: State<Runner>, uuid: String) {
+    debug_fn!();
+    loop {
+        let sent;
+        match state.get_task_log(&uuid) {
+            Ok(content) => {
+                sent = socket.send(Message::Text(content)).await;
+            }
+            Err(err) => {
+                sent = socket.send(Message::Text(format!("Error: {}", err))).await;
+            }
+        }
+        if sent.is_err() { break; }
+        sleep(Duration::from_millis(WS_INTERVAL_MILLI_SEC)).await;
     }
 }
 

@@ -1,10 +1,12 @@
-use kamura_core::consts::{OPERATOR_ARCH_DIR, RUNNER_TASKS_SET_NAME};
+use kamura_core::consts::{OPERATOR_ARCH_DIR, RUNNER_ELF_PATH, RUNNER_OTHER_WORKLOAD_PATH, RUNNER_TASKS_SET_NAME, RUNNER_ZSTF_PATH};
+use kamura_core::func::concat;
+use kamura_core::split;
 use redis::{Commands, RedisResult};
 use sayaka::{debug_fn, debug_var};
 use std::error::Error;
-use std::fs;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use std::{fs, io};
 use tokio::process::Command;
 use uuid::Uuid;
 
@@ -19,12 +21,16 @@ impl Runner {
         self.perseus.join("build")
     }
 
-    fn get_elf_path(&self, elf_name: &String) -> PathBuf {
-        self.perseus.join(format!("traces/elf_test/test/{}.elf", elf_name))
-    }
-
-    fn get_zstf_path(&self, trace_name: &String) -> PathBuf {
-        self.perseus.join(format!("traces/{}.zstf", trace_name))
+    fn get_workload_path(&self, workload_name: &String, workload_type: &String) -> PathBuf {
+        if workload_type == "trace" {
+            self.perseus.join(RUNNER_ZSTF_PATH).join(format!("{workload_name}.zstf"))
+        } else if workload_type == "elf" {
+            self.perseus.join(RUNNER_ELF_PATH).join(format!("{workload_name}.elf"))
+        } else if workload_type == "else" {
+            PathBuf::from(RUNNER_OTHER_WORKLOAD_PATH).join(format!("{workload_name}.zstf"))
+        } else {
+            PathBuf::new()
+        }
     }
 
     pub fn new(perseus: &PathBuf, redis: &String) -> Result<Self, Box<dyn Error>> {
@@ -42,7 +48,7 @@ impl Runner {
         let mut workloads = Vec::new();
 
         // 1. Get all .zstf files in self.perseus/traces directory
-        let traces_path = self.perseus.join("traces");
+        let traces_path = self.perseus.join(RUNNER_ZSTF_PATH);
         for entry in fs::read_dir(&traces_path)? {
             let entry = entry?;
             let path = entry.path();
@@ -54,13 +60,25 @@ impl Runner {
         }
 
         // 2. Get all .elf files in self.perseus/traces/elf_test/test directory
-        let elf_test_path = self.perseus.join("traces/elf_test/test");
+        let elf_test_path = self.perseus.join(RUNNER_ELF_PATH);
         for entry in fs::read_dir(&elf_test_path)? {
             let entry = entry?;
             let path = entry.path();
             if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("elf") {
                 if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
                     workloads.push([file_name.to_string(), "elf".to_string()]);
+                }
+            }
+        }
+
+        // 3. Get all other files in share
+        let other_path = PathBuf::from(RUNNER_OTHER_WORKLOAD_PATH);
+        for entry in fs::read_dir(&other_path)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("zstf") {
+                if let Some(file_name) = path.file_stem().and_then(|s| s.to_str()) {
+                    workloads.push([file_name.to_string(), "else".to_string()]);
                 }
             }
         }
@@ -76,14 +94,14 @@ impl Runner {
         let command_str;
         let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{arch}.json")).to_str().unwrap().to_string();
         fs::create_dir_all("/tmp/kamura").unwrap();
-        if workload_type == "trace" {
-            workload_path = self.get_zstf_path(&workload).to_str().unwrap().to_string();
+        if workload_type == "trace" || workload_type == "else" {
+            workload_path = self.get_workload_path(&workload, &workload_type).to_str().unwrap().to_string();
             command_str = format!(
                 "{} --json {} --workload {} > /tmp/kamura/{}.log 2>&1",
                 perseus_bin.to_str().unwrap(), arch_path, workload_path, uuid.to_string()
             );
         } else {
-            workload_path = self.get_elf_path(&workload).to_str().unwrap().to_string();
+            workload_path = self.get_workload_path(&workload, &workload_type).to_str().unwrap().to_string();
             command_str = format!(
                 "{} --arch {} --elf {} > /tmp/kamura/{}.log 2>&1",
                 perseus_bin.to_str().unwrap(), arch_path, workload_path, uuid.to_string()
@@ -101,9 +119,9 @@ impl Runner {
             .expect("Process didn't complete successfully");
 
         if status.success() {
-            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), "Succeed").unwrap();
+            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), concat(Vec::from(["Succeed", &arch, &workload]))).unwrap();
         } else {
-            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), "Failed").unwrap();
+            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), concat(Vec::from(["Failed", &arch, &workload]))).unwrap();
         }
     }
 
@@ -111,30 +129,39 @@ impl Runner {
         debug_fn!(arch,workload);
         let uuid = Uuid::new_v4();
         let runner = Arc::new(self.clone());
-        let arch = arch.clone();
-        let workload = workload.clone();
+        let arch_ = arch.clone();
+        let workload_ = workload.clone();
         let workload_type = workload_type.clone();
 
         tokio::task::spawn({
             let runner = runner.clone(); // Capture the Arc for the async task
             async move {
-                runner.add_task_handler(arch, uuid, workload, workload_type).await;
+                runner.add_task_handler(arch_, uuid, workload_, workload_type).await;
             }
         });
 
-        self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, uuid.to_string().as_str(), "Running")?;
+        self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, uuid.to_string().as_str(), concat(Vec::from(["Running", arch, workload])))?;
         Ok(uuid)
     }
 
-    pub fn get_task_log(&self, uuid: &String) -> Result<String, Box<dyn Error>> {
-        debug_fn!(uuid);
+    pub fn get_task_log(&self, uuid: &String) -> io::Result<String> {
+        // debug_fn!(uuid);
         let contents = fs::read_to_string(format!("/tmp/kamura/{}.log", uuid))?;
         Ok(contents)
     }
 
+    pub fn get_task_info(&self, uuid: &String) -> RedisResult<[String; 2]> {
+        // debug_fn!(uuid);
+        let status: String = self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}"))?;
+        let parts = split(status);
+        Ok([parts[1].clone(), parts[2].clone()])
+    }
+
     pub fn get_task_status(&self, uuid: &String) -> RedisResult<String> {
         // debug_fn!(uuid);
-        self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}"))
+        let status: String = self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}"))?;
+        let parts = split(status);
+        Ok(parts[0].clone())
     }
 
     pub fn get_all_tasks(&mut self) -> RedisResult<Vec<String>> {
