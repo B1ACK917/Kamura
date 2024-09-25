@@ -104,7 +104,7 @@ impl Runner {
         } else {
             workload_path = self.get_workload_path(&workload, &workload_type).to_str().unwrap().to_string();
             command_str = format!(
-                "{} --arch {} --elf {} > /tmp/kamura/{}.log 2>&1",
+                "{} --json {} --elf {} > /tmp/kamura/{}.log 2>&1",
                 perseus_bin.to_str().unwrap(), arch_path, workload_path, uuid.to_string()
             );
         }
