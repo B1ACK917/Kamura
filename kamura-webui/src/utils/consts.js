@@ -4,8 +4,10 @@ export const topologyTemplate = {
     "binding": []
 }
 export const viewerDefaultVars = {
-    leftCollapse: false,
-    rightCollapse: false,
+    collapse: {
+        left: false,
+        right: false,
+    },
     arches: null,
     selectedArch: null,
     raw: {
@@ -27,4 +29,12 @@ export const viewerDefaultVars = {
         from: null,
         to: null,
     }
+};
+
+export const runnerDefaultTaskInfo = {
+    arch: null,
+    workload: null,
+    submitTime: null,
+    finishedTime: null,
+    elapsed: null
 };

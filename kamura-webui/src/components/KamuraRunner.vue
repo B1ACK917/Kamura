@@ -1,7 +1,7 @@
 <template>
   <el-container class="kamura-runner" style="height: 90vh">
     <el-scrollbar>
-      <el-radio-group v-model="collapse" style="margin-bottom: 20px">
+      <el-radio-group v-model="collapse.left" style="margin-bottom: 20px">
         <el-radio-button :value="true">
           <el-icon>
             <Minus/>
@@ -13,7 +13,7 @@
           </el-icon>
         </el-radio-button>
       </el-radio-group>
-      <el-menu :collapse="collapse">
+      <el-menu :collapse="collapse.left">
         <el-sub-menu index="1">
           <template #title>
             <el-icon>
@@ -52,22 +52,7 @@
             </el-menu-item>
           </el-menu-item-group>
         </el-sub-menu>
-        <el-sub-menu index="2">
-          <template #title>
-            <el-icon>
-              <Files/>
-            </el-icon>
-            <span>Runners</span>
-          </template>
-          <el-menu-item-group>
-            <el-menu-item v-for="task in tasks" :key="task.uuid" @click="fetchTaskLog(task.uuid)">
-              <el-icon :style="{ color: task.color }">
-                <component :is="task.icon"/>
-              </el-icon>
-              {{ task.uuid }}
-            </el-menu-item>
-          </el-menu-item-group>
-        </el-sub-menu>
+
       </el-menu>
     </el-scrollbar>
 
@@ -95,16 +80,56 @@
         </el-descriptions>
       </el-space>
     </el-main>
+
+    <el-scrollbar>
+      <el-radio-group v-model="collapse.right" style="margin-bottom: 20px">
+        <el-radio-button :value="true">
+          <el-icon>
+            <Minus/>
+          </el-icon>
+        </el-radio-button>
+        <el-radio-button :value="false">
+          <el-icon>
+            <Plus/>
+          </el-icon>
+        </el-radio-button>
+      </el-radio-group>
+      <el-menu :collapse="collapse.right">
+        <el-sub-menu index="2">
+          <template #title>
+            <el-icon>
+              <Files/>
+            </el-icon>
+            <span>Runners</span>
+          </template>
+          <el-menu-item-group>
+            <el-menu-item v-for="task in tasks" :key="task.uuid" @click="fetchTaskLog(task.uuid)">
+              <el-icon :style="{ color: task.color }">
+                <component :is="task.icon"/>
+              </el-icon>
+              <div style="margin-right: 5px">{{ task.uuid }}</div>
+              <el-button type="danger" :icon="Delete" circle @click="removeTask(task.uuid)" size="default"/>
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-sub-menu>
+      </el-menu>
+    </el-scrollbar>
   </el-container>
 </template>
 
 <script>
 import axios from 'axios';
-import {kamuraEngineUrl} from "@/utils/consts";
+import {kamuraEngineUrl, runnerDefaultTaskInfo} from "@/utils/consts";
 import {commonFetchPost} from "@/utils/funcs";
+import {Delete} from "@element-plus/icons-vue";
 
 export default {
   name: 'KamuraRunner',
+  computed: {
+    Delete() {
+      return Delete
+    }
+  },
   props: {
     sharedSelectedArch: {
       type: String, // Adjust the type based on the expected type of `sharedSelectedArch`
@@ -113,32 +138,28 @@ export default {
   },
   data() {
     return {
-      collapse: false,
+      collapse: {
+        left: false,
+        right: false,
+      },
       tasks: [],  // Store tasks with uuid, color, icon
       traceWorkloads: [],
       elfWorkloads: [],
       elseWorkloads: [],
       wsList: [],
       selectedArch: null,
+      selectedUUID: null,
       logWS: null,
-      logInfo: {
-        arch: null,
-        workload: null,
-        submitTime: null,
-        finishedTime: null,
-        elapsed: null
-      }
+      logInfo: runnerDefaultTaskInfo,
     };
   },
   async created() {
-    await this.fetchAllTasks();
+    await this.fetchAllTasksAndPush();
     await this.fetchWorkloads();
     await this.startUpdateTaskStatuses();
   },
   beforeUnmount() {
-    for (let ws of this.wsList) {
-      ws.close();
-    }
+    for (let ws of this.wsList) ws.close();
     if (this.logWS != null) this.logWS.close();
   },
   methods: {
@@ -156,7 +177,7 @@ export default {
         console.error('Error fetching workloads:', error);
       }
     },
-    async fetchAllTasks() {
+    async fetchAllTasksAndPush() {
       try {
         const response = await axios.get(`${kamuraEngineUrl}/getAllTasks`);
         if (response.data.success) {
@@ -165,6 +186,23 @@ export default {
           });
 
           newTasks.forEach(task => {
+            this.tasks.push({
+              uuid: task,
+              color: 'gray',
+              icon: "SuccessFilled"
+            });
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching tasks:', error);
+      }
+    },
+    async fetchAllTasksAndRefresh() {
+      try {
+        const response = await axios.get(`${kamuraEngineUrl}/getAllTasks`);
+        if (response.data.success) {
+          this.tasks = [];
+          response.data.tasks.forEach(task => {
             this.tasks.push({
               uuid: task,
               color: 'gray',
@@ -204,6 +242,7 @@ export default {
       }
     },
     async fetchTaskLog(uuid) {
+      this.selectedUUID = uuid;
       if (this.logWS != null) this.logWS.close();
       this.fetchTaskInfo(uuid).then();
       this.logWS = new WebSocket(`${kamuraEngineUrl}/ws/getTaskLog/${uuid}`);
@@ -237,10 +276,20 @@ export default {
       } catch (error) {
         console.error('Error:', error);
       }
-      await this.fetchAllTasks();
+      await this.fetchAllTasksAndPush();
       await this.startUpdateTaskStatuses();
+    },
+    async removeTask(uuid) {
+      await commonFetchPost(`${kamuraEngineUrl}/removeTask`, {target: uuid});
+      await this.fetchAllTasksAndRefresh();
+      for (let ws of this.wsList) ws.close();
+      await this.startUpdateTaskStatuses();
+      this.logInfo = runnerDefaultTaskInfo;
+      if (this.logWS != null) this.logWS.close();
+      let responseSpan = document.getElementById("log");
+      responseSpan.innerHTML = "";
     }
-  }
+  },
 }
 </script>
 

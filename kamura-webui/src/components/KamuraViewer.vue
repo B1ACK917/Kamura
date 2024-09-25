@@ -1,7 +1,7 @@
 <template>
   <el-container class="kamura-viewer" style="height: 80vh">
     <el-scrollbar>
-      <el-radio-group v-model="leftCollapse" style="margin-bottom: 20px">
+      <el-radio-group v-model="collapse.left" style="margin-bottom: 20px">
         <el-radio-button :value="true">
           <el-icon>
             <Minus/>
@@ -13,7 +13,7 @@
           </el-icon>
         </el-radio-button>
       </el-radio-group>
-      <el-menu :collapse="leftCollapse" :default-openeds="[]">
+      <el-menu :collapse="collapse.left" :default-openeds="[]">
         <el-sub-menu index="1">
           <template #title>
             <el-icon>
@@ -72,7 +72,7 @@
     </el-container>
 
     <el-scrollbar>
-      <el-radio-group v-model="rightCollapse" style="margin-bottom: 20px">
+      <el-radio-group v-model="collapse.right" style="margin-bottom: 20px">
         <el-radio-button :value="true">
           <el-icon>
             <Minus/>
@@ -84,7 +84,7 @@
           </el-icon>
         </el-radio-button>
       </el-radio-group>
-      <el-menu :collapse="rightCollapse" :default-openeds="[]">
+      <el-menu :collapse="collapse.right" :default-openeds="[]">
 
         <el-sub-menu index="1">
           <template #title>
