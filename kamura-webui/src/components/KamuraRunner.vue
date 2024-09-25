@@ -57,6 +57,13 @@
     </el-scrollbar>
 
     <el-main>
+      <el-space size="large">
+        <el-descriptions column="2">
+          <el-descriptions-item label="Selected Arch: ">
+            <el-tag size="small">{{ this.sharedSelectedArch }}</el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-space>
       <div>
         <textarea id="log" readonly></textarea>
       </div>
