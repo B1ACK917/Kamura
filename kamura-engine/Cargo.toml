@@ -1,13 +1,16 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/kamura", "crates/kamura-controller", "crates/kamura-core",
-    "crates/kamura-integrator", "crates/kamura-operator",
+    "crates/kamura",
+    "crates/kamura-controller",
+    "crates/kamura-core",
+    "crates/kamura-integrator",
+    "crates/kamura-operator",
     "crates/kamura-runner",
     "crates/sayaka"
 ]
 
 [workspace.package]
-version = "0.2.0"
+version = "1.0.0"
 edition = "2021"
 authors = ["B1ACK917"]
