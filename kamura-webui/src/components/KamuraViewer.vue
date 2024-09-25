@@ -55,9 +55,10 @@
           </template>
           <el-menu-item-group>
             <el-menu-item index="4-1" @click="newArch">New</el-menu-item>
-            <el-menu-item index="4-2" @click="saveArch">Save</el-menu-item>
-            <el-menu-item index="4-3" @click="resetArch">Reset</el-menu-item>
-            <el-menu-item index="4-4" @click="removeArch">Delete</el-menu-item>
+            <el-menu-item index="4-2" @click="duplicateArch">Duplicate</el-menu-item>
+            <el-menu-item index="4-3" @click="saveArch">Save</el-menu-item>
+            <el-menu-item index="4-4" @click="resetArch">Reset</el-menu-item>
+            <el-menu-item index="4-5" @click="removeArch">Delete</el-menu-item>
           </el-menu-item-group>
         </el-sub-menu>
 
@@ -273,16 +274,32 @@ export default {
           elements: []
         });
         await this.fetchAndLoadCy(value);
-        ElMessage({
-          type: 'success',
-          message: `Successfully created new arch ${value}`,
-        });
+        ElMessage({type: 'success', message: `Successfully created new arch ${value}`,});
         await this.fetchArchesList();
       }).catch(() => {
-        ElMessage({
-          type: 'info',
-          message: 'Canceled',
-        })
+        ElMessage({type: 'info', message: 'Canceled',})
+      });
+    },
+    async duplicateArch() {
+      if (this.selectedArch === null) {
+        ElMessage({type: 'error', message: 'No selected arch',});
+        return;
+      }
+      ElMessageBox.prompt(`Duplicate ${this.selectedArch}`, 'Tip', {
+        confirmButtonText: 'Create',
+        cancelButtonText: 'Cancel',
+        inputPlaceholder: 'Arch Name'
+      }).then(async ({value}) => {
+        await commonFetchPost(`${kamuraEngineUrl}/saveArchElements`, {
+          target: value,
+          topology: this.raw.topology,
+          elements: this.cyElements
+        });
+        await this.fetchAndLoadCy(value);
+        ElMessage({type: 'success', message: `Duplicate ${this.selectedArch} as ${value}`,});
+        await this.fetchArchesList();
+      }).catch(() => {
+        ElMessage({type: 'info', message: 'Canceled',})
       });
     },
     async removeArch() {
