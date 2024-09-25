@@ -56,10 +56,10 @@ pub(crate) fn add_ports(units: &Units, topology: &Topology, mut elements: Vec<Va
                     let (mut cur_x, mut cur_y) = (x, y);
                     let unit = &units.units[module];
                     let mut max_x = 0;
-                    let hierarchy=&unit.hierarchy;
+                    let hierarchy = &unit.hierarchy;
 
                     for port in unit.ports["in_ports"].as_array().unwrap() {
-                        let port=port.as_str().unwrap();
+                        let port = port.as_str().unwrap();
                         let data = format!(r#"{{
                             "data": {{
                               "id": "{hierarchy}.{instance}.ports.{port}",
@@ -78,7 +78,7 @@ pub(crate) fn add_ports(units: &Units, topology: &Topology, mut elements: Vec<Va
                     cur_y += OPERATOR_DEFAULT_NODE_GAP.1;
 
                     for port in unit.ports["out_ports"].as_array().unwrap() {
-                        let port=port.as_str().unwrap();
+                        let port = port.as_str().unwrap();
                         let data = format!(r#"{{
                             "data": {{
                               "id": "{hierarchy}.{instance}.ports.{port}",

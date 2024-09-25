@@ -1,3 +1,4 @@
+use chrono::{Local, NaiveDateTime};
 use kamura_core::consts::{OPERATOR_ARCH_DIR, RUNNER_ELF_PATH, RUNNER_OTHER_WORKLOAD_PATH, RUNNER_TASKS_SET_NAME, RUNNER_ZSTF_PATH};
 use kamura_core::func::concat;
 use kamura_core::split;
@@ -118,11 +119,16 @@ impl Runner {
             .await
             .expect("Process didn't complete successfully");
 
+        let old_status: String = self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}")).unwrap();
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let new_status;
         if status.success() {
-            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), concat(Vec::from(["Succeed", &arch, &workload]))).unwrap();
+            new_status = old_status.replace("Running", "Succeed");
         } else {
-            let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), concat(Vec::from(["Failed", &arch, &workload]))).unwrap();
+            new_status = old_status.replace("Running", "Failed");
         }
+        let _: () = self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, format!("{uuid}"), concat(vec![new_status.as_str(), &timestamp])).unwrap();
     }
 
     pub async fn add_task(&mut self, arch: &String, workload: &String, workload_type: &String) -> Result<Uuid, Box<dyn Error>> {
@@ -140,7 +146,9 @@ impl Runner {
             }
         });
 
-        self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, uuid.to_string().as_str(), concat(Vec::from(["Running", arch, workload])))?;
+        let now = Local::now();
+        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, uuid.to_string().as_str(), concat(Vec::from(["Running", arch, workload, &timestamp])))?;
         Ok(uuid)
     }
 
@@ -150,11 +158,20 @@ impl Runner {
         Ok(contents)
     }
 
-    pub fn get_task_info(&self, uuid: &String) -> RedisResult<[String; 2]> {
+    pub fn get_task_info(&self, uuid: &String) -> RedisResult<[String; 5]> {
         // debug_fn!(uuid);
         let status: String = self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}"))?;
         let parts = split(status);
-        Ok([parts[1].clone(), parts[2].clone()])
+        if parts.len() < 5 {
+            Ok([parts[1].clone(), parts[2].clone(), parts[3].clone(), "None".to_string(), "None".to_string()])
+        } else {
+            let time1 = NaiveDateTime::parse_from_str(parts[3].as_str(), "%Y-%m-%d %H:%M:%S")
+                .expect("Failed to parse timestamp1");
+            let time2 = NaiveDateTime::parse_from_str(parts[4].as_str(), "%Y-%m-%d %H:%M:%S")
+                .expect("Failed to parse timestamp2");
+            let duration = time2 - time1;
+            Ok([parts[1].clone(), parts[2].clone(), parts[3].clone(), parts[4].clone(), format!("{}s", duration.num_seconds().to_string())])
+        }
     }
 
     pub fn get_task_status(&self, uuid: &String) -> RedisResult<String> {

@@ -55,7 +55,10 @@ pub struct Arch {
 pub struct TaskLogInfo {
     pub success: bool,
     pub arch: String,
-    pub workload: String
+    pub workload: String,
+    pub submit_time: String,
+    pub finished_time: String,
+    pub elapsed: String,
 }
 
 // IN PAYLOADS

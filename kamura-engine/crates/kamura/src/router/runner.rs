@@ -42,10 +42,24 @@ pub async fn get_task_info(state: State<Runner>, Json(payload): Json<UniversalTa
     debug_fn!(payload);
     match state.get_task_info(&payload.target) {
         Ok(info) => {
-            Json(TaskLogInfo { success: true, arch: info[0].clone(), workload: info[1].clone() })
+            Json(TaskLogInfo {
+                success: true,
+                arch: info[0].clone(),
+                workload: info[1].clone(),
+                submit_time: info[2].clone(),
+                finished_time: info[3].clone(),
+                elapsed: info[4].clone(),
+            })
         }
         Err(_) => {
-            Json(TaskLogInfo { success: false, arch: "".to_string(), workload: "".to_string() })
+            Json(TaskLogInfo {
+                success: false,
+                arch: "".to_string(),
+                workload: "".to_string(),
+                submit_time: "".to_string(),
+                finished_time: "".to_string(),
+                elapsed: "".to_string(),
+            })
         }
     }
 }

@@ -10,3 +10,4 @@ kamura-core = { path = "../kamura-core" }
 redis = "0.26.1"
 uuid = { version = "1.10.0", features = ["v4", "fast-rng", "macro-diagnostics"] }
 tokio = { version = "1.40.0", features = ["full"] }
+chrono = "0.4.38"
