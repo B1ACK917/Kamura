@@ -1,5 +1,5 @@
 <template>
-  <el-container class="kamura-runner" style="height: 80vh">
+  <el-container class="kamura-runner" style="height: 90vh">
     <el-scrollbar>
       <el-radio-group v-model="collapse" style="margin-bottom: 20px">
         <el-radio-button :value="true">
@@ -76,12 +76,21 @@
         <textarea id="log" readonly></textarea>
       </div>
       <el-space size="large">
-        <el-descriptions>
-          <el-descriptions-item label="Arch">
-            <el-tag size="small">{{ arch }}</el-tag>
+        <el-descriptions column="2">
+          <el-descriptions-item label="Arch: ">
+            <el-tag size="small">{{ logInfo.arch }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="Workload">
-            <el-tag size="small">{{ workload }}</el-tag>
+          <el-descriptions-item label="Workload: ">
+            <el-tag size="small">{{ logInfo.workload }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Submit: ">
+            <el-tag size="small">{{ logInfo.submitTime }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Finished: ">
+            <el-tag size="small">{{ logInfo.finishedTime }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Elapsed: ">
+            <el-tag size="small">{{ logInfo.elapsed }}</el-tag>
           </el-descriptions-item>
         </el-descriptions>
       </el-space>
@@ -112,8 +121,13 @@ export default {
       wsList: [],
       selectedArch: null,
       logWS: null,
-      arch: null,
-      workload: null
+      logInfo: {
+        arch: null,
+        workload: null,
+        submitTime: null,
+        finishedTime: null,
+        elapsed: null
+      }
     };
   },
   async created() {
@@ -201,8 +215,13 @@ export default {
     async fetchTaskInfo(uuid) {
       try {
         const data = await commonFetchPost(`${kamuraEngineUrl}/getTaskInfo`, {target: uuid});
-        this.arch = data.arch;
-        this.workload = data.workload;
+        this.logInfo = {
+          arch: data.arch,
+          workload: data.workload,
+          submitTime: data.submit_time,
+          finishedTime: data.finished_time,
+          elapsed: data.elapsed
+        }
       } catch (error) {
         console.error("Error fetching log info:", error);
       }
