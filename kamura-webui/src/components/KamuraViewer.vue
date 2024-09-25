@@ -309,19 +309,31 @@ export default {
           message: 'No selected arch',
         })
       }
-      try {
-        await commonFetchPost(`${kamuraEngineUrl}/removeArch`, {target: this.selectedArch,});
+      ElMessageBox.confirm('Are you sure to delete this arch file?', 'Warning', {
+        confirmButtonText: 'Confirm',
+        cancelButtonText: 'Cancel',
+        type: 'warning',
+      }).then(async () => {
+        try {
+          await commonFetchPost(`${kamuraEngineUrl}/removeArch`, {target: this.selectedArch,});
+          ElMessage({
+            type: 'success',
+            message: `Remove ${this.selectedArch} from Kamura-Engine`,
+          })
+          this.selectedArch = null;
+          this.cy.destroy();
+          this.cy = null;
+          await this.fetchArchesList();
+        } catch (error) {
+          console.error("Error: ", error);
+        }
+      }).catch((err) => {
+        console.error(err);
         ElMessage({
-          type: 'success',
-          message: `Remove ${this.selectedArch} from Kamura-Engine`,
+          type: 'info',
+          message: 'Canceled',
         })
-        this.selectedArch = null;
-        this.cy.destroy();
-        this.cy = null;
-      } catch (error) {
-        console.error("Error: ", error);
-      }
-      await this.fetchArchesList();
+      });
     },
     async resetArch() {
       await this.fetchArch(this.selectedArch, true);
