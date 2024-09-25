@@ -1,5 +1,5 @@
 use chrono::{DateTime, Local};
-use kamura_core::consts::{INTEGRATOR_MAKE_THREAD, INTEGRATOR_PERSEUS_REBUILD, INTEGRATOR_PERSEUS_UPDATE, INTEGRATOR_SPIKE_REBUILD, INTEGRATOR_TASKS_SET_NAME};
+use kamura_core::consts::{INTEGRATOR_MAKE_THREAD, INTEGRATOR_PERSEUS_REBUILD, INTEGRATOR_PERSEUS_UPDATE, INTEGRATOR_SPIKE_REBUILD, INTEGRATOR_TASKS_SET_NAME, KAMURA_UNIVERSAL_TIMESTAMP_FMT};
 use redis::Commands;
 use sayaka::debug_fn;
 use std::error::Error;
@@ -89,7 +89,7 @@ impl Integrator {
             duration_since_epoch.subsec_nanos(),
         ).ok_or("Failed to convert timestamp")?.with_timezone(&Local);
 
-        let formatted_date = datetime.format("%Y-%m-%d %H:%M:%S").to_string();
+        let formatted_date = datetime.format(KAMURA_UNIVERSAL_TIMESTAMP_FMT).to_string();
         Ok(formatted_date)
     }
 
@@ -147,7 +147,7 @@ impl Integrator {
 
 
         let now = Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = now.format(KAMURA_UNIVERSAL_TIMESTAMP_FMT).to_string();
         let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_REBUILD, format!("Succeed at [{timestamp}]")).unwrap();
     }
 
@@ -197,7 +197,7 @@ impl Integrator {
             return;
         }
         let now = Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = now.format(KAMURA_UNIVERSAL_TIMESTAMP_FMT).to_string();
         let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_PERSEUS_UPDATE, format!("Succeed at [{timestamp}]")).unwrap();
     }
 
@@ -245,7 +245,7 @@ impl Integrator {
             return;
         }
         let now = Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = now.format(KAMURA_UNIVERSAL_TIMESTAMP_FMT).to_string();
         let _: () = self.con.lock().unwrap().hset(INTEGRATOR_TASKS_SET_NAME, INTEGRATOR_SPIKE_REBUILD, format!("Succeed at [{timestamp}]")).unwrap();
     }
 

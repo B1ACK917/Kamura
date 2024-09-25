@@ -121,3 +121,15 @@ pub async fn get_all_tasks(mut state: State<Runner>) -> Json<Tasks> {
         }
     }
 }
+
+pub async fn remove_task(mut state: State<Runner>, Json(payload): Json<UniversalTargetPayload>) -> Json<CommonResponse> {
+    debug_fn!(payload);
+    match state.remove_task(&payload.target) {
+        Ok(_) => {
+            Json(CommonResponse { success: true, message: "".to_string() })
+        }
+        Err(err) => {
+            Json(CommonResponse { success: false, message: err.to_string() })
+        }
+    }
+}

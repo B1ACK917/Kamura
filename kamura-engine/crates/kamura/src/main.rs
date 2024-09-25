@@ -42,6 +42,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .route("/getAllTasks", get(get_all_tasks))
         .route("/getTaskInfo", post(get_task_info))
         .route("/ws/getTaskStatus/:uuid", get(get_task_status))
+        .route("/removeTask", post(remove_task))
         .with_state(kamura_runner)
         .route("/getPerseus", get(get_perseus_path))
         .route("/getPerseusVersion", get(get_perseus_version))

@@ -1,5 +1,5 @@
 use chrono::{Local, NaiveDateTime};
-use kamura_core::consts::{OPERATOR_ARCH_DIR, RUNNER_ELF_PATH, RUNNER_OTHER_WORKLOAD_PATH, RUNNER_TASKS_SET_NAME, RUNNER_ZSTF_PATH};
+use kamura_core::consts::{KAMURA_UNIVERSAL_TIMESTAMP_FMT, OPERATOR_ARCH_DIR, RUNNER_ELF_PATH, RUNNER_OTHER_WORKLOAD_PATH, RUNNER_TASKS_SET_NAME, RUNNER_ZSTF_PATH};
 use kamura_core::func::concat;
 use kamura_core::split;
 use redis::{Commands, RedisResult};
@@ -121,7 +121,7 @@ impl Runner {
 
         let old_status: String = self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}")).unwrap();
         let now = Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = now.format(KAMURA_UNIVERSAL_TIMESTAMP_FMT).to_string();
         let new_status;
         if status.success() {
             new_status = old_status.replace("Running", "Succeed");
@@ -147,7 +147,7 @@ impl Runner {
         });
 
         let now = Local::now();
-        let timestamp = now.format("%Y-%m-%d %H:%M:%S").to_string();
+        let timestamp = now.format(KAMURA_UNIVERSAL_TIMESTAMP_FMT).to_string();
         self.con.lock().unwrap().hset(RUNNER_TASKS_SET_NAME, uuid.to_string().as_str(), concat(Vec::from(["Running", arch, workload, &timestamp])))?;
         Ok(uuid)
     }
@@ -159,15 +159,15 @@ impl Runner {
     }
 
     pub fn get_task_info(&self, uuid: &String) -> RedisResult<[String; 5]> {
-        // debug_fn!(uuid);
+        debug_fn!(uuid);
         let status: String = self.con.lock().unwrap().hget(RUNNER_TASKS_SET_NAME, format!("{uuid}"))?;
         let parts = split(status);
         if parts.len() < 5 {
             Ok([parts[1].clone(), parts[2].clone(), parts[3].clone(), "None".to_string(), "None".to_string()])
         } else {
-            let time1 = NaiveDateTime::parse_from_str(parts[3].as_str(), "%Y-%m-%d %H:%M:%S")
+            let time1 = NaiveDateTime::parse_from_str(parts[3].as_str(), KAMURA_UNIVERSAL_TIMESTAMP_FMT)
                 .expect("Failed to parse timestamp1");
-            let time2 = NaiveDateTime::parse_from_str(parts[4].as_str(), "%Y-%m-%d %H:%M:%S")
+            let time2 = NaiveDateTime::parse_from_str(parts[4].as_str(), KAMURA_UNIVERSAL_TIMESTAMP_FMT)
                 .expect("Failed to parse timestamp2");
             let duration = time2 - time1;
             Ok([parts[1].clone(), parts[2].clone(), parts[3].clone(), parts[4].clone(), format!("{}s", duration.num_seconds().to_string())])
@@ -184,5 +184,10 @@ impl Runner {
     pub fn get_all_tasks(&mut self) -> RedisResult<Vec<String>> {
         // debug_fn!();
         self.con.lock().unwrap().hkeys(RUNNER_TASKS_SET_NAME)
+    }
+
+    pub fn remove_task(&mut self, uuid: &String) -> Result<(), Box<dyn Error>> {
+        let _: () = self.con.lock().unwrap().hdel(RUNNER_TASKS_SET_NAME, format!("{uuid}"))?;
+        Ok(())
     }
 }
