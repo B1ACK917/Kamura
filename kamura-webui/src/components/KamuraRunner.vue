@@ -1,54 +1,90 @@
 <template>
   <el-container class="kamura-runner" style="height: 80vh">
-    <el-aside width="400px">
-      <el-scrollbar>
-        <el-menu>
-          <el-sub-menu index="1">
-            <template #title>
-              Workloads
-            </template>
-            <!-- Trace Subgroup -->
-            <el-menu-item-group title="Trace">
-              <el-menu-item
-                  v-for="(workload, index) in traceWorkloads"
-                  :key="'trace-' + index"
-                  @click="addTaskToRunner(workload[0], workload[1])"
-              >
-                {{ workload[0] }}
-              </el-menu-item>
-            </el-menu-item-group>
-            <!-- ELF Subgroup -->
-            <el-menu-item-group title="Elf">
-              <el-menu-item
-                  v-for="(workload, index) in elfWorkloads"
-                  :key="'elf-' + index"
-                  @click="addTaskToRunner(workload[0], workload[1])"
-              >
-                {{ workload[0] }}
-              </el-menu-item>
-            </el-menu-item-group>
-          </el-sub-menu>
-          <el-sub-menu index="2">
-            <template #title>
-              Runners
-            </template>
-            <el-menu-item-group>
-              <el-menu-item v-for="task in tasks" :key="task.uuid" @click="fetchTaskLog(task.uuid)">
-                <el-icon :style="{ color: task.color }">
-                  <component :is="task.icon"/>
-                </el-icon>
-                {{ task.uuid }}
-              </el-menu-item>
-            </el-menu-item-group>
-          </el-sub-menu>
-        </el-menu>
-      </el-scrollbar>
-    </el-aside>
+    <el-scrollbar>
+      <el-radio-group v-model="collapse" style="margin-bottom: 20px">
+        <el-radio-button :value="true">
+          <el-icon>
+            <Minus/>
+          </el-icon>
+        </el-radio-button>
+        <el-radio-button :value="false">
+          <el-icon>
+            <Plus/>
+          </el-icon>
+        </el-radio-button>
+      </el-radio-group>
+      <el-menu :collapse="collapse">
+        <el-sub-menu index="1">
+          <template #title>
+            <el-icon>
+              <DocumentAdd/>
+            </el-icon>
+            <span>Workloads</span>
+          </template>
+          <!-- Trace Subgroup -->
+          <el-menu-item-group title="Trace">
+            <el-menu-item
+                v-for="(workload, index) in traceWorkloads"
+                :key="'trace-' + index"
+                @click="addTaskToRunner(workload[0], workload[1])"
+            >
+              {{ workload[0] }}
+            </el-menu-item>
+          </el-menu-item-group>
+          <!-- ELF Subgroup -->
+          <el-menu-item-group title="Elf">
+            <el-menu-item
+                v-for="(workload, index) in elfWorkloads"
+                :key="'elf-' + index"
+                @click="addTaskToRunner(workload[0], workload[1])"
+            >
+              {{ workload[0] }}
+            </el-menu-item>
+          </el-menu-item-group>
+          <!-- ELSE Subgroup -->
+          <el-menu-item-group title="Else">
+            <el-menu-item
+                v-for="(workload, index) in elseWorkloads"
+                :key="'else-' + index"
+                @click="addTaskToRunner(workload[0], workload[1])"
+            >
+              {{ workload[0] }}
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-sub-menu>
+        <el-sub-menu index="2">
+          <template #title>
+            <el-icon>
+              <Files/>
+            </el-icon>
+            <span>Runners</span>
+          </template>
+          <el-menu-item-group>
+            <el-menu-item v-for="task in tasks" :key="task.uuid" @click="fetchTaskLog(task.uuid)">
+              <el-icon :style="{ color: task.color }">
+                <component :is="task.icon"/>
+              </el-icon>
+              {{ task.uuid }}
+            </el-menu-item>
+          </el-menu-item-group>
+        </el-sub-menu>
+      </el-menu>
+    </el-scrollbar>
 
     <el-main>
       <div>
         <textarea id="log" readonly></textarea>
       </div>
+      <el-space size="large">
+        <el-descriptions>
+          <el-descriptions-item label="Arch">
+            <el-tag size="small">{{ arch }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="Workload">
+            <el-tag size="small">{{ workload }}</el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+      </el-space>
     </el-main>
   </el-container>
 </template>
@@ -56,6 +92,7 @@
 <script>
 import axios from 'axios';
 import {kamuraEngineUrl} from "@/utils/consts";
+import {commonFetchPost} from "@/utils/funcs";
 
 export default {
   name: 'KamuraRunner',
@@ -67,11 +104,16 @@ export default {
   },
   data() {
     return {
+      collapse: false,
       tasks: [],  // Store tasks with uuid, color, icon
       traceWorkloads: [],
       elfWorkloads: [],
+      elseWorkloads: [],
       wsList: [],
-      selectedArch: null
+      selectedArch: null,
+      logWS: null,
+      arch: null,
+      workload: null
     };
   },
   async created() {
@@ -83,6 +125,7 @@ export default {
     for (let ws of this.wsList) {
       ws.close();
     }
+    if (this.logWS != null) this.logWS.close();
   },
   methods: {
     async fetchWorkloads() {
@@ -91,6 +134,7 @@ export default {
         if (response.data.success) {
           this.traceWorkloads = response.data.workloads.filter(workload => workload[1] === 'trace');
           this.elfWorkloads = response.data.workloads.filter(workload => workload[1] === 'elf');
+          this.elseWorkloads = response.data.workloads.filter(workload => workload[1] === 'else');
         } else {
           console.error('Failed to fetch workloads');
         }
@@ -146,14 +190,21 @@ export default {
       }
     },
     async fetchTaskLog(uuid) {
+      if (this.logWS != null) this.logWS.close();
+      this.fetchTaskInfo(uuid).then();
+      this.logWS = new WebSocket(`${kamuraEngineUrl}/ws/getTaskLog/${uuid}`);
+      this.logWS.onmessage = (message) => {
+        let responseSpan = document.getElementById("log");
+        responseSpan.innerHTML = message.data;
+      }
+    },
+    async fetchTaskInfo(uuid) {
       try {
-        const response = await axios.post(`${kamuraEngineUrl}/getTaskLog`, {target: uuid});
-        if (response.data.success) {
-          let responseSpan = document.getElementById("log")
-          responseSpan.innerHTML = response.data.message
-        }
+        const data = await commonFetchPost(`${kamuraEngineUrl}/getTaskInfo`, {target: uuid});
+        this.arch = data.arch;
+        this.workload = data.workload;
       } catch (error) {
-        console.error('Error fetching task log:', error);
+        console.error("Error fetching log info:", error);
       }
     },
     async addTaskToRunner(workload, workloadType) {
