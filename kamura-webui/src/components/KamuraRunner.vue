@@ -110,13 +110,17 @@
             <span>Runners</span>
           </template>
           <el-menu-item-group>
-            <el-menu-item v-for="task in tasks" :key="task.uuid" @click="fetchTaskLog(task.uuid)">
-              <el-icon :style="{ color: task.color }">
-                <component :is="task.icon"/>
-              </el-icon>
-              <div style="margin-right: 5px">{{ task.uuid }}</div>
-              <el-button type="danger" :icon="Delete" circle @click="removeTask(task.uuid)" size="default"/>
-            </el-menu-item>
+            <el-space direction="vertical">
+              <el-space v-for="task in tasks" :key="task.uuid" >
+                <el-menu-item @click="fetchTaskLog(task.uuid)" style="padding: 0">
+                  <el-icon :style="{ color: task.color }">
+                    <component :is="task.icon"/>
+                  </el-icon>
+                  {{ task.uuid }}
+                </el-menu-item>
+                <el-button type="danger" :icon="Delete" circle @click="removeTask(task.uuid)" size="default"/>
+              </el-space>
+            </el-space>
           </el-menu-item-group>
         </el-sub-menu>
       </el-menu>
