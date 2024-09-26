@@ -22,14 +22,14 @@
             <span>Arches</span>
           </template>
           <el-menu-item-group>
-            <el-menu-item
-                v-for="(arch, index) in this.arches"
-                :key="index"
-                :index="`1-${index + 1}`"
-                @click="fetchAndLoadCy(arch)"
-            >
-              {{ arch }}
-            </el-menu-item>
+            <el-space direction="vertical">
+              <el-space v-for="(arch, index) in this.arches" :key="index">
+                <el-menu-item :index="`1-${index + 1}`" @click="fetchAndLoadCy(arch)">
+                  {{ arch }}
+                </el-menu-item>
+                <el-button type="primary" :icon="Edit" circle @click="editArch(arch)"/>
+              </el-space>
+            </el-space>
           </el-menu-item-group>
         </el-sub-menu>
 
@@ -56,7 +56,7 @@
           <el-menu-item-group>
             <el-menu-item index="4-1" @click="newArch">New</el-menu-item>
             <el-menu-item index="4-2" @click="duplicateArch">Duplicate</el-menu-item>
-            <el-menu-item index="4-3" @click="saveArch">Save</el-menu-item>
+            <el-menu-item index="4-3" @click="saveArch()">Save</el-menu-item>
             <el-menu-item index="4-4" @click="resetArch">Reset</el-menu-item>
             <el-menu-item index="4-5" @click="removeArch">Delete</el-menu-item>
           </el-menu-item-group>
@@ -187,6 +187,29 @@
 
     </el-footer>
   </el-container>
+
+  <el-dialog v-model="archEditDialogVisible" title="Edit Arch">
+    <el-form :model="archEditDialogForm">
+      <el-form-item label="Elements">
+        <el-input
+            v-model="archEditDialogForm.elements"
+            style="width: 40vw; height: 50vh"
+            :autosize="{ minRows: 1,maxRows:25 }"
+            type="textarea"
+            placeholder="Please input"
+        />
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <div class="dialog-footer">
+        <el-button @click="archEditDialogVisible = false">Cancel</el-button>
+        <el-button type="primary"
+                   @click="archEditDialogVisible = false; saveArch(archEditDialogForm.target,archEditDialogForm.topology,JSON.parse(archEditDialogForm.elements))">
+          Confirm
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 
@@ -204,10 +227,16 @@ import {
   updateBinding
 } from "@/utils/funcs";
 import {ElMessage, ElMessageBox} from 'element-plus'
+import {Edit} from "@element-plus/icons-vue";
 
 
 export default {
   name: 'KamuraViewer',
+  computed: {
+    Edit() {
+      return Edit
+    }
+  },
   props: ['updateSharedValues'],
   data() {
     return viewerDefaultVars;
@@ -247,16 +276,16 @@ export default {
         console.error("Error fetching arch:", error);
       }
     },
-    async saveArch() {
+    async saveArch(target = this.selectedArch, topology = this.raw.topology, elements = this.cyElements) {
       try {
         await commonFetchPost(`${kamuraEngineUrl}/saveArchElements`, {
-          target: this.selectedArch,
-          topology: this.raw.topology,
-          elements: this.cyElements
+          target,
+          topology,
+          elements
         });
         ElMessage({
           type: 'success',
-          message: `Saved ${this.selectedArch} to Kamura-Engine`,
+          message: `Saved ${target} to Kamura-Engine`,
         })
       } catch (error) {
         console.error("Error saving arch:", error);
@@ -381,6 +410,17 @@ export default {
     gotoInstance(id) {
       this.cy.center(this.cy.getElementById(id));
     },
+    async editArch(target) {
+      this.archEditDialogVisible = true;
+      try {
+        const data = await commonFetchPost(`${kamuraEngineUrl}/getArchElements`, {target, reset: false});
+        this.archEditDialogForm.target = target;
+        this.archEditDialogForm.elements = JSON.stringify(parseArch(data)[0], null, 4);
+        this.archEditDialogForm.topology = parseArch(data)[1];
+      } catch (error) {
+        console.error("Error fetching arch:", error);
+      }
+    },
     async setListener() {
       const self = this;
       this.cy.on('tap', 'node', async function (evt) {
@@ -398,7 +438,7 @@ export default {
               break;
             }
             [self.bindingStack, newEdge, self.raw.topology, self.cyElements] = updateBinding(self.bindingStack, nodeID, self.raw.topology, self.cyElements);
-            self.cy.add(newEdge);
+            if (newEdge.length !== 0) self.cy.add(newEdge);
             break;
           case 'bindFrom':
             [valid, res] = checkBinding(self.bindingStack, nodeID);
@@ -407,19 +447,20 @@ export default {
               break;
             }
             [self.bindingStack, newEdge, self.raw.topology, self.cyElements] = updateBinding(self.bindingStack, nodeID, self.raw.topology, self.cyElements, false);
-            self.cy.add(newEdge);
+            if (newEdge.length !== 0) self.cy.add(newEdge);
             break;
           default:
             break;
         }
       });
       this.cy.on('tap', 'edge', function (evt) {
+        console.log(self.cy.data());
         const edge = evt.target;
         const edgeID = edge.id();
         switch (self.mode) {
           case 'remove':
             console.log(`Remove mode: ${edgeID}`);
-            self.cy.remove(edge);
+            self.cy.remove(self.cy.getElementById(edgeID));
             self.cyElements = self.cyElements.filter(item => item.data.id !== edgeID);
             const [source, target] = edgeID.split('-');
             self.raw.topology.binding = self.raw.topology.binding.filter(item => !(item.source === source && item.target === target));
@@ -428,22 +469,22 @@ export default {
             break;
         }
       });
-      this.cy.on('mouseover', 'node', async function (evt) {
-        const node = evt.target;
-        const nodeID = node.id();
-        if (nodeID.includes('.')) {
-          self.lastInformation.ins = node.incomers().filter(item => item.isNode()).map(item => item.id().replace('.ports', ''));
-          self.lastInformation.outs = node.outgoers().filter(item => item.isNode()).map(item => item.id().replace('.ports', ''));
-          self.lastInformation.name = nodeID.replace('.ports', '');
-          self.lastInformation.inDegree = node.indegree();
-          self.lastInformation.outDegree = node.outdegree();
-        }
-      });
-      this.cy.on('mouseover', 'edge', async function (evt) {
-        const edge = evt.target;
-        self.lastInformation.from = edge.source().id().replace('.ports', '');
-        self.lastInformation.to = edge.target().id().replace('.ports', '');
-      });
+      // this.cy.on('mouseover', 'node', async function (evt) {
+      //   const node = evt.target;
+      //   const nodeID = node.id();
+      //   if (nodeID.includes('.')) {
+      //     self.lastInformation.ins = node.incomers().filter(item => item.isNode()).map(item => item.id().replace('.ports', ''));
+      //     self.lastInformation.outs = node.outgoers().filter(item => item.isNode()).map(item => item.id().replace('.ports', ''));
+      //     self.lastInformation.name = nodeID.replace('.ports', '');
+      //     self.lastInformation.inDegree = node.indegree();
+      //     self.lastInformation.outDegree = node.outdegree();
+      //   }
+      // });
+      // this.cy.on('mouseover', 'edge', async function (evt) {
+      //   const edge = evt.target;
+      //   self.lastInformation.from = edge.source().id().replace('.ports', '');
+      //   self.lastInformation.to = edge.target().id().replace('.ports', '');
+      // });
     }
   }
 }

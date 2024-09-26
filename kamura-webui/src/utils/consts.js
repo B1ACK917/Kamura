@@ -1,3 +1,5 @@
+import {reactive} from "vue";
+
 export const kamuraEngineUrl = "https://kamura-engine.malloc.fun"
 export const topologyTemplate = {
     "hierarchy": {},
@@ -28,7 +30,13 @@ export const viewerDefaultVars = {
         outs: [],
         from: null,
         to: null,
-    }
+    },
+    archEditDialogVisible: false,
+    archEditDialogForm: reactive({
+        target: '',
+        elements: '',
+        topology: null,
+    })
 };
 
 export const runnerDefaultTaskInfo = {

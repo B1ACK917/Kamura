@@ -6,7 +6,7 @@
           <kamura-viewer @updateSharedValues="updateSharedValues"></kamura-viewer>
         </el-tab-pane>
         <el-tab-pane label="Kamura-Runner" name="second">
-          <kamura-runner v-if="activeName === 'second'" :sharedSelectedArch="sharedSelectedArch"></kamura-runner>
+          <kamura-runner :sharedSelectedArch="sharedSelectedArch"></kamura-runner>
         </el-tab-pane>
         <el-tab-pane label="Settings" name="third">
           <kamura-settings v-if="activeName === 'third'" :sharedSelectedArch="sharedSelectedArch"></kamura-settings>

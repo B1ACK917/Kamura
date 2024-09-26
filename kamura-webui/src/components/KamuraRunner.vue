@@ -111,7 +111,7 @@
           </template>
           <el-menu-item-group>
             <el-space direction="vertical">
-              <el-space v-for="task in tasks" :key="task.uuid" >
+              <el-space v-for="task in tasks" :key="task.uuid">
                 <el-menu-item @click="fetchTaskLog(task.uuid)" style="padding: 0">
                   <el-icon :style="{ color: task.color }">
                     <component :is="task.icon"/>

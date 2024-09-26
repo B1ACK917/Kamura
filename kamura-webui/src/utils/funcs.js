@@ -58,6 +58,7 @@ export function addAUnit(unitName, unitType, units, topology, elements, instance
 }
 
 export function checkBinding(bindingStack, nodeID) {
+    if (nodeID == null) return [false, "Invalid select"];
     if (nodeID.includes('.')) {
         if (bindingStack != null) {
             if (bindingStack.endsWith("out") && nodeID.endsWith("out")) {
