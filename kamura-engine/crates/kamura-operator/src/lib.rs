@@ -1,7 +1,7 @@
 mod utils;
 
 use crate::utils::convert_to_cy_elements;
-use kamura_core::consts::{OPERATOR_ARCH_DIR, OPERATOR_ARCH_LAYOUTS_SET_NAME};
+use kamura_core::consts::{OPERATOR_OVERRIDE_ARCH_DIR, OPERATOR_ARCH_LAYOUTS_SET_NAME};
 use redis::{Commands, Connection, RedisResult};
 use sayaka::debug_fn;
 use serde::{Deserialize, Serialize};
@@ -76,7 +76,7 @@ impl Operator {
 
     pub fn list_arches(&self) -> Result<Vec<String>, Box<dyn Error>> {
         debug_fn!();
-        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR);
+        let arch_path = self.perseus.join(OPERATOR_OVERRIDE_ARCH_DIR);
         if !arch_path.exists() || !arch_path.is_dir() {
             return Err(format!("The path {:?} does not exist or is not a directory", arch_path).into());
         }
@@ -105,7 +105,7 @@ impl Operator {
 
     pub fn read_arch(&self, target_arch: &String) -> Result<Topology, Box<dyn Error>> {
         debug_fn!();
-        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{target_arch}.json"));
+        let arch_path = self.perseus.join(OPERATOR_OVERRIDE_ARCH_DIR).join(format!("{target_arch}.json"));
         if !arch_path.exists() {
             return Err(format!("The path {:?} does not exist", arch_path).into());
         }
@@ -140,7 +140,7 @@ impl Operator {
         debug_fn!();
         let serialized_data = serde_json::to_string(&elements).unwrap();
 
-        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{arch_name}.json"));
+        let arch_path = self.perseus.join(OPERATOR_OVERRIDE_ARCH_DIR).join(format!("{arch_name}.json"));
         let topology_file = File::create(arch_path)?;
         serde_json::to_writer_pretty(topology_file, &topology)?;
 
@@ -150,7 +150,7 @@ impl Operator {
 
     pub fn remove_arch(&self, arch_name: String) -> Result<(), Box<dyn Error>> {
         debug_fn!();
-        let arch_path = self.perseus.join(OPERATOR_ARCH_DIR).join(format!("{arch_name}.json"));
+        let arch_path = self.perseus.join(OPERATOR_OVERRIDE_ARCH_DIR).join(format!("{arch_name}.json"));
         fs::remove_file(&arch_path)?;
 
         let _: () = self.con.lock().unwrap().hdel(OPERATOR_ARCH_LAYOUTS_SET_NAME, format!("{arch_name}"))?;

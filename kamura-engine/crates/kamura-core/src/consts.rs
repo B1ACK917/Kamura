@@ -6,6 +6,7 @@ pub const OPERATOR_DEFAULT_MODULE_GAP: (usize, usize) = (300, 300);
 pub const OPERATOR_DEFAULT_MODULE_PER_LINE: usize = 3;
 pub const OPERATOR_ARCH_LAYOUTS_SET_NAME: &str = "KAMURA_OPERATOR_ARCH";
 pub const OPERATOR_ARCH_DIR: &str = "arches/config";
+pub const OPERATOR_OVERRIDE_ARCH_DIR: &str = "arches/kamura_override";
 pub const RUNNER_TASKS_SET_NAME: &str = "KAMURA_RUNNER_TASKS";
 pub const RUNNER_ZSTF_PATH: &str = "traces";
 pub const RUNNER_ELF_PATH: &str = "traces/elf_test/test";
