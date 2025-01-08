@@ -58,39 +58,44 @@ pub(crate) fn add_ports(units: &Units, topology: &Topology, mut elements: Vec<Va
                     let mut max_x = 0;
                     let hierarchy = &unit.hierarchy;
 
-                    for port in unit.ports["in_ports"].as_array().unwrap() {
-                        let port = port.as_str().unwrap();
-                        let data = format!(r#"{{
-                            "data": {{
-                              "id": "{hierarchy}.{instance}.ports.{port}",
-                              "label": "{port}",
-                              "parent": "{instance}"
-                            }},
-                            "position": {{ "x": {cur_x}, "y": {cur_y} }}
-                          }}"#
-                        );
-                        elements.push(serde_json::from_str(data.as_str())?);
-                        cur_x += OPERATOR_DEFAULT_NODE_GAP.0;
+                    if unit.ports.contains_key("in_ports") {
+                        for port in unit.ports["in_ports"].as_array().unwrap() {
+                            let port = port.as_str().unwrap();
+                            let data = format!(r#"{{
+                                "data": {{
+                                "id": "{hierarchy}.{instance}.ports.{port}",
+                                "label": "{port}",
+                                "parent": "{instance}"
+                                }},
+                                "position": {{ "x": {cur_x}, "y": {cur_y} }}
+                            }}"#
+                            );
+                            elements.push(serde_json::from_str(data.as_str())?);
+                            cur_x += OPERATOR_DEFAULT_NODE_GAP.0;
+                        }
                     }
                     max_x = max(max_x, cur_x);
 
                     cur_x = x;
                     cur_y += OPERATOR_DEFAULT_NODE_GAP.1;
-
-                    for port in unit.ports["out_ports"].as_array().unwrap() {
-                        let port = port.as_str().unwrap();
-                        let data = format!(r#"{{
-                            "data": {{
-                              "id": "{hierarchy}.{instance}.ports.{port}",
-                              "label": "{port}",
-                              "parent": "{instance}"
-                            }},
-                            "position": {{ "x": {cur_x}, "y": {cur_y} }}
-                          }}"#
-                        );
-                        elements.push(serde_json::from_str(data.as_str())?);
-                        cur_x += OPERATOR_DEFAULT_NODE_GAP.0;
+                    
+                    if unit.ports.contains_key("out_ports") {
+                        for port in unit.ports["out_ports"].as_array().unwrap() {
+                            let port = port.as_str().unwrap();
+                            let data = format!(r#"{{
+                                "data": {{
+                                  "id": "{hierarchy}.{instance}.ports.{port}",
+                                  "label": "{port}",
+                                  "parent": "{instance}"
+                                }},
+                                "position": {{ "x": {cur_x}, "y": {cur_y} }}
+                              }}"#
+                            );
+                            elements.push(serde_json::from_str(data.as_str())?);
+                            cur_x += OPERATOR_DEFAULT_NODE_GAP.0;
+                        }
                     }
+                    
                     max_x = max(max_x, cur_x);
 
                     n_instance += 1;
